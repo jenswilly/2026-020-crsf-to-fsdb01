@@ -2,6 +2,8 @@
 FROM ubuntu:24.04
 
 ARG ZEPHYR_VERSION=v4.4.2
+ARG CMAKE_VERSION=4.4.3
+ARG NINJA_VERSION=1.13.2
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=1000
@@ -11,15 +13,33 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=C.UTF-8
 
 # Zephyr host dependencies (per the Zephyr Getting Started guide) plus
-# debug/flash tooling for ST-LINK probes.
+# debug/flash tooling for ST-LINK probes. CMake and Ninja are installed
+# separately below, as Ubuntu's packages are too old.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        git cmake ninja-build gperf ccache dfu-util device-tree-compiler \
-        wget curl ca-certificates xz-utils file make gcc g++ \
+        git gperf ccache dfu-util device-tree-compiler \
+        wget curl ca-certificates xz-utils unzip file make gcc g++ \
         gcc-multilib g++-multilib libsdl2-dev libmagic1 \
         python3 python3-dev python3-pip python3-venv python3-tk \
         openocd stlink-tools gdb-multiarch usbutils \
         sudo bash-completion less nano \
     && rm -rf /var/lib/apt/lists/*
+
+# CMake and Ninja: official release binaries (the CMake download is checksum-verified)
+RUN ARCH=$(uname -m) \
+    && case "${ARCH}" in x86_64) NINJA_ZIP=ninja-linux.zip ;; aarch64) NINJA_ZIP=ninja-linux-aarch64.zip ;; *) echo "Unsupported arch ${ARCH}"; exit 1 ;; esac \
+    && cd /tmp \
+    && CMAKE_TGZ=cmake-${CMAKE_VERSION}-linux-${ARCH}.tar.gz \
+    && curl -fsSLO https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_TGZ} \
+    && curl -fsSLO https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-SHA-256.txt \
+    && sha256sum --ignore-missing -c cmake-${CMAKE_VERSION}-SHA-256.txt \
+    && mkdir -p /opt/cmake \
+    && tar -xzf ${CMAKE_TGZ} -C /opt/cmake --strip-components=1 \
+    && ln -s /opt/cmake/bin/* /usr/local/bin/ \
+    && curl -fsSLO https://github.com/ninja-build/ninja/releases/download/v${NINJA_VERSION}/${NINJA_ZIP} \
+    && unzip -q ${NINJA_ZIP} -d /usr/local/bin \
+    && chmod 0755 /usr/local/bin/ninja \
+    && rm -rf /tmp/* \
+    && cmake --version && ninja --version
 
 # Replace the default 'ubuntu' user (UID 1000) with our dev user
 RUN userdel -r ubuntu 2>/dev/null || true \

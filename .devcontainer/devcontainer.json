@@ -5,6 +5,8 @@
         "context": ".",
         "args": {
             "ZEPHYR_VERSION": "v4.4.2",
+            "CMAKE_VERSION": "4.4.3",
+            "NINJA_VERSION": "1.13.2",
             "USERNAME": "vscode",
             "USER_UID": "1000",
             "USER_GID": "1000"

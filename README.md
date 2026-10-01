@@ -44,13 +44,14 @@ Everything is built in a VS Code devcontainer (`.devcontainer/`), based on Ubunt
 - Zephyr **v4.4.2** west workspace in `/opt/zephyrproject` (`ZEPHYR_BASE` is set). Only the `cmsis`, `cmsis_6` and `hal_stm32` modules are fetched.
 - Zephyr SDK **1.0.1** in `/opt/zephyr-sdk-1.0.1` (ARM GCC 14.3 + host tools)
 - Python venv with west in `/opt/zephyr-venv` (on `PATH`)
+- CMake **4.4.3** and Ninja **1.13.2** from the official release binaries (Ubuntu's packages are too old)
 - OpenOCD, stlink-tools, gdb-multiarch
 
 Open the folder in VS Code and choose **Dev Containers: Reopen in Container**. The first image build downloads Zephyr and the SDK and takes a while.
 
 The container runs privileged with the host's `/dev` bind-mounted, so ST-LINK probes and `/dev/ttyACM*` ports work, including ones that re-enumerate after a board reset. The **host** needs udev rules for the ST-LINK. Your user must be in the `dialout` and `plugdev` groups.
 
-To change Zephyr versions, edit `ZEPHYR_VERSION` in `devcontainer.json` and rebuild the container.
+To change tool versions, edit `ZEPHYR_VERSION`, `CMAKE_VERSION` or `NINJA_VERSION` in `devcontainer.json`, then rebuild the container.
 
 ## Building, flashing and debugging
 

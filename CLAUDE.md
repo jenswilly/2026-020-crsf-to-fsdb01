@@ -6,9 +6,11 @@ See `README.md` for the project overview, hardware, pin assignments and build co
 
 - Zephyr v4.4.2, Zephyr SDK 1.0.1 (GCC 14.3), and all tools live **only in the devcontainer**, not on the host.
 - From the host, run commands in the running devcontainer:
-  `devcontainer exec --workspace-folder . bash -c 'west build -b crsf_fsdb01/stm32g0b1xx -d build_custom .'`
+  `devcontainer exec --workspace-folder . bash -c 'cmake --preset custom && cmake --build --preset custom'`
   If no container is running, ask the user to start it rather than building an image yourself.
-- Build directories: `build_nucleo/` (`nucleo_g0b1re`) and `build_custom/` (`crsf_fsdb01`). They're gitignored via `build*/`. Use the fully qualified board targets `nucleo_g0b1re/stm32g0b1xx` and `crsf_fsdb01/stm32g0b1xx`, because the build dirs are also used by the nRF Connect extension and west rejects a differently spelled board name.
+- **Use CMake presets, not the nRF Connect extension or `west build`.** Presets `nucleo` and `custom` in `CMakePresets.json` build into `build_nucleo/` and `build_custom/` (gitignored via `build*/`). Use Zephyr targets such as `flash`, `menuconfig` and `ram_report` through `cmake --build --preset <name> --target <target>`.
+- Board-specific build settings (board, extra overlays/conf files, variants) go in `CMakePresets.json` as cache variables. Keep `.vscode/tasks.json` and `.vscode/launch.json` in sync when adding presets.
+- Board targets are fully qualified: `nucleo_g0b1re/stm32g0b1xx` and `crsf_fsdb01/stm32g0b1xx`.
 - **Always build both boards** after changes to code, Kconfig or devicetree. Report errors and warnings. The goal is zero warnings.
 - Look up Zephyr APIs, Kconfig symbols and bindings in the container's `/opt/zephyrproject` tree. Don't rely on memory; Zephyr changes between releases.
 

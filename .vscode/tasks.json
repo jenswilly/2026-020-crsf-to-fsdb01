@@ -1,0 +1,45 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build: nucleo",
+      "type": "shell",
+      "command": "cmake --preset nucleo && cmake --build --preset nucleo",
+      "group": "build",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Build: custom",
+      "type": "shell",
+      "command": "cmake --preset custom && cmake --build --preset custom",
+      "group": "build",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Flash: nucleo",
+      "type": "shell",
+      "command": "cmake --build --preset nucleo --target flash",
+      "dependsOn": "Build: nucleo",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash: custom",
+      "type": "shell",
+      "command": "cmake --build --preset custom --target flash",
+      "dependsOn": "Build: custom",
+      "problemMatcher": []
+    },
+    {
+      "label": "Menuconfig: custom",
+      "type": "shell",
+      "command": "cmake --build --preset custom --target menuconfig",
+      "problemMatcher": []
+    },
+    {
+      "label": "Menuconfig: nucleo",
+      "type": "shell",
+      "command": "cmake --build --preset nucleo --target menuconfig",
+      "problemMatcher": []
+    }
+  ]
+}

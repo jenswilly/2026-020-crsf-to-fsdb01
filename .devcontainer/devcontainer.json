@@ -39,10 +39,12 @@
                 "nordic-semiconductor.nrf-terminal"
             ],
             "settings": {
+                "cmake.useCMakePresets": "always",
                 "cmake.configureOnOpen": false,
-                "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
-                "cortex-debug.gdbPath": "gdb-multiarch",
-                "cortex-debug.openocdPath": "/usr/bin/openocd"
+                "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+                // Same OpenOCD/GDB as the Zephyr flash/debug runners
+                "cortex-debug.gdbPath": "/opt/zephyr-sdk-1.0.1/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
+                "cortex-debug.openocdPath": "/opt/zephyr-sdk-1.0.1/hosttools/sysroots/x86_64-pokysdk-linux/usr/bin/openocd"
             }
         }
     }

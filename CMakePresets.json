@@ -1,0 +1,37 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build_${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "nucleo",
+      "inherits": "base",
+      "displayName": "NUCLEO-G0B1RE",
+      "description": "Development board, STM32G0B1RET6",
+      "cacheVariables": {
+        "BOARD": "nucleo_g0b1re/stm32g0b1xx"
+      }
+    },
+    {
+      "name": "custom",
+      "inherits": "base",
+      "displayName": "Custom board (crsf_fsdb01)",
+      "description": "Production board, STM32G0B1CET6",
+      "cacheVariables": {
+        "BOARD": "crsf_fsdb01/stm32g0b1xx"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "nucleo", "configurePreset": "nucleo", "displayName": "NUCLEO-G0B1RE" },
+    { "name": "custom", "configurePreset": "custom", "displayName": "Custom board (crsf_fsdb01)" }
+  ]
+}

@@ -52,34 +52,42 @@ The container runs privileged with the host's `/dev` bind-mounted, so ST-LINK pr
 
 To change Zephyr versions, edit `ZEPHYR_VERSION` in `devcontainer.json` and rebuild the container.
 
-## Building and flashing
+## Building, flashing and debugging
+
+Builds are driven by **CMake presets** (`CMakePresets.json`), one per board:
+
+| Preset   | Board target                | Build directory |
+|----------|-----------------------------|-----------------|
+| `nucleo` | `nucleo_g0b1re/stm32g0b1xx` | `build_nucleo/` |
+| `custom` | `crsf_fsdb01/stm32g0b1xx`   | `build_custom/` |
+
+### In VS Code
+
+- **Build:** choose the preset in the CMake Tools status bar, then click Build (F7). IntelliSense follows the active preset.
+- **Flash / menuconfig:** use the tasks in `.vscode/tasks.json` (*Tasks: Run Task* → `Flash: nucleo`, `Flash: custom`, …).
+- **Debug:** use the Cortex-Debug launch configs in `.vscode/launch.json` (`Debug: nucleo`, `Debug: custom`, `Attach: custom`). They build first, then flash and debug via OpenOCD + ST-LINK.
+
+### From the command line
 
 Run these inside the container, from the project root:
 
 ```sh
-# Development board
-west build -b nucleo_g0b1re/stm32g0b1xx -d build_nucleo .
-west flash -d build_nucleo
-
-# Custom board
-west build -b crsf_fsdb01/stm32g0b1xx -d build_custom .
-west flash -d build_custom
+cmake --preset custom                             # configure
+cmake --build --preset custom                     # build
+cmake --build --preset custom --target flash      # flash (OpenOCD + ST-LINK)
+cmake --build --preset custom --target menuconfig # Kconfig
+cmake --build --preset custom --target ram_report # memory usage
 ```
 
-Use the full board targets (`<board>/stm32g0b1xx`), as the nRF Connect extension does. West refuses to reuse a build directory if the board name is spelled differently. Add `-p` for a pristine rebuild. Flashing uses OpenOCD with an ST-LINK by default. The custom board also defines runners for STM32CubeProgrammer, pyOCD and J-Link (`west flash -r <runner>`).
+Replace `custom` with `nucleo` for the development board. For a clean rebuild, delete the build directory, or run `cmake --preset <name> --fresh`.
 
-Other useful targets:
-
-```sh
-west build -d build_custom -t menuconfig   # Kconfig
-west build -d build_custom -t ram_report   # memory usage
-west debug -d build_nucleo                 # GDB via OpenOCD
-```
+The `flash`, `debug` and `debugserver` targets call Zephyr's west runners internally. `west` still works on the same build directories, e.g. `west flash -d build_custom`, or `west flash -d build_custom -r <runner>` to pick another runner. The custom board also defines STM32CubeProgrammer, pyOCD and J-Link runners. Flashing and Cortex-Debug both use the OpenOCD and GDB from the Zephyr SDK.
 
 ## Project layout
 
 ```
 CMakeLists.txt                  App build; adds this repo as a BOARD_ROOT
+CMakePresets.json               Configure/build presets per board
 prj.conf                        Common Kconfig: C++23, full libstdc++, logging, shell, USB CDC ACM
 src/                            Application sources (C++)
 boards/
@@ -87,6 +95,7 @@ boards/
   nucleo_g0b1re.overlay         Nucleo: crsf-uart alias, USB console, frees PA11/PA12
   crsf_fsdb01.overlay           Custom board: USB console
   custom/crsf_fsdb01/           Custom board definition (Zephyr hardware model v2)
+.vscode/                        Tasks (build/flash/menuconfig) and Cortex-Debug launch configs
 .devcontainer/                  Dockerfile + devcontainer.json
 ```
 

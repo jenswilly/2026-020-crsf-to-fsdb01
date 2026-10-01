@@ -1,0 +1,41 @@
+# Project guidelines for Claude
+
+See `README.md` for the project overview, hardware, pin assignments and build commands.
+
+## Toolchain and building
+
+- Zephyr v4.4.2, Zephyr SDK 1.0.1 (GCC 14.3), and all tools live **only in the devcontainer**, not on the host.
+- From the host, run commands in the running devcontainer:
+  `devcontainer exec --workspace-folder . bash -c 'west build -b crsf_fsdb01/stm32g0b1xx -d build_custom .'`
+  If no container is running, ask the user to start it rather than building an image yourself.
+- Build directories: `build_nucleo/` (`nucleo_g0b1re`) and `build_custom/` (`crsf_fsdb01`). They're gitignored via `build*/`. Use the fully qualified board targets `nucleo_g0b1re/stm32g0b1xx` and `crsf_fsdb01/stm32g0b1xx`, because the build dirs are also used by the nRF Connect extension and west rejects a differently spelled board name.
+- **Always build both boards** after changes to code, Kconfig or devicetree. Report errors and warnings. The goal is zero warnings.
+- Look up Zephyr APIs, Kconfig symbols and bindings in the container's `/opt/zephyrproject` tree. Don't rely on memory; Zephyr changes between releases.
+
+## Code
+
+- Application code is **C++23** (`CONFIG_STD_CPP23`) with full libstdc++ (`CONFIG_REQUIRES_FULL_LIBCPP`). Exceptions and RTTI are off; don't use them.
+- Sources go in `src/` as `.cpp` and must be listed in `CMakeLists.txt`.
+- Zephyr's own code stays C. Use Zephyr C APIs directly from C++. Don't add wrappers unless they earn their keep.
+- Tabs for indentation, matching Zephyr style.
+- Avoid dynamic allocation in steady-state code paths.
+
+## Boards and devicetree
+
+- Two targets: `nucleo_g0b1re` (stock Zephyr board plus `boards/nucleo_g0b1re.overlay`) and `crsf_fsdb01` (custom board in `boards/custom/crsf_fsdb01/`).
+- **No board `#ifdef`s in application code.** Get hardware through devicetree aliases (`crsf-uart`, `led0`, `led1`, …). Every alias the app uses must be defined for **both** boards.
+- Hardware description belongs in the board DTS (`crsf_fsdb01.dts`). App-level software choices (console routing, CDC ACM) belong in `boards/*.overlay` or `boards/usb_console.dtsi`. Kconfig common to both boards goes in `prj.conf`.
+- Custom board pin assignments are **provisional**. Keep the README pin table in sync when they change.
+- No crystal on either board: SYSCLK is 64 MHz from the HSI, and USB uses HSI48 with `crs-usb-sof`.
+- On the Nucleo, PA11/PA12 are used for USB. I2C2 and FDCAN1 are disabled in the overlay because the stock board config assigns them to the same pins. Watch for similar pin conflicts when enabling peripherals.
+
+## Console / CLI
+
+- The console and shell are USB CDC ACM (`cdc_acm_uart0`) on both boards. There is **no UART console**, and the production board has none.
+- Keep `CONFIG_USBD_CDC_ACM_LOG_LEVEL_OFF=y`, because CDC ACM can't log to itself.
+- The VID/PID is currently Zephyr's test ID (`0x2fe3:0x0004`) and must be replaced before production.
+
+## Housekeeping
+
+- Keep `README.md` up to date when hardware, pins, build steps or the environment change.
+- Don't commit unless asked.

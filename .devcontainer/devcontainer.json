@@ -1,44 +1,49 @@
 {
-  "name": "Zephyr STM32G0",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".",
-    "args": {
-      "ZEPHYR_VERSION": "v4.4.2",
-      "USERNAME": "vscode",
-      "USER_UID": "1000",
-      "USER_GID": "1000"
+    "name": "Zephyr STM32G0",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".",
+        "args": {
+            "ZEPHYR_VERSION": "v4.4.2",
+            "USERNAME": "vscode",
+            "USER_UID": "1000",
+            "USER_GID": "1000"
+        }
+    },
+    "remoteUser": "vscode",
+    // Privileged + host /dev bind mount gives the container access to ST-LINK
+    // probes and USB CDC ACM ports, including devices that appear after the
+    // container has started (e.g. /dev/ttyACM* re-enumerating on board reset).
+    // The host still needs udev rules for the probe.
+    "runArgs": [
+        "--privileged"
+    ],
+    "mounts": [
+        "source=/dev,target=/dev,type=bind",
+        "source=zephyr-ccache,target=/home/vscode/.cache/ccache,type=volume"
+    ],
+    "containerEnv": {
+        "CCACHE_DIR": "/home/vscode/.cache/ccache"
+    },
+    "postCreateCommand": "sudo chown vscode:vscode /home/vscode/.cache/ccache",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "kylemicallefbonnici.dts-lsp",
+                "marus25.cortex-debug",
+                "ms-vscode.cmake-tools",
+                "ms-vscode.cpptools",
+                "nordic-semiconductor.nrf-connect",
+                "nordic-semiconductor.nrf-devicetree",
+                "nordic-semiconductor.nrf-kconfig",
+                "nordic-semiconductor.nrf-terminal"
+            ],
+            "settings": {
+                "cmake.configureOnOpen": false,
+                "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
+                "cortex-debug.gdbPath": "gdb-multiarch",
+                "cortex-debug.openocdPath": "/usr/bin/openocd"
+            }
+        }
     }
-  },
-  "remoteUser": "vscode",
-  // Privileged + /dev/bus/usb gives the container access to ST-LINK probes
-  // (the host still needs udev rules for the probe).
-  "runArgs": [
-    "--privileged",
-    "-v", "/dev/bus/usb:/dev/bus/usb"
-  ],
-  "mounts": [
-    "source=zephyr-ccache,target=/home/vscode/.cache/ccache,type=volume"
-  ],
-  "containerEnv": {
-    "CCACHE_DIR": "/home/vscode/.cache/ccache"
-  },
-  "postCreateCommand": "sudo chown vscode:vscode /home/vscode/.cache/ccache",
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "ms-vscode.cpptools",
-        "ms-vscode.cmake-tools",
-        "marus25.cortex-debug",
-        "plorefice.devicetree",
-        "trond-snekvik.kconfig-lang"
-      ],
-      "settings": {
-        "cmake.configureOnOpen": false,
-        "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
-        "cortex-debug.gdbPath": "gdb-multiarch",
-        "cortex-debug.openocdPath": "/usr/bin/openocd"
-      }
-    }
-  }
 }

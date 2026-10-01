@@ -1,0 +1,11 @@
+BasedOnStyle: Google
+IndentWidth: 4
+AccessModifierOffset: -4
+
+BreakConstructorInitializers: BeforeColon
+ConstructorInitializerIndentWidth: 4
+PackConstructorInitializers: Never
+ColumnLimit: 100
+AlignConsecutiveMacros: true
+InsertNewlineAtEOF: true
+AllowShortEnumsOnASingleLine: false

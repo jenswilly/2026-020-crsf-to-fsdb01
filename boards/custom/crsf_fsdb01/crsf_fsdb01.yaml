@@ -1,0 +1,14 @@
+identifier: crsf_fsdb01
+name: CRSF to FSDB01 (STM32G0B1CET6)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 144
+flash: 512
+supported:
+  - gpio
+  - uart
+  - usbd
+  - watchdog
+vendor: custom

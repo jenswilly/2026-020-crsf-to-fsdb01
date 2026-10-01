@@ -1,0 +1,91 @@
+/*
+ * Custom board with STM32G0B1CET6 (LQFP48, 512 KiB flash, 144 KiB RAM)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/g0/stm32g0b1Xe.dtsi>
+#include <st/g0/stm32g0b1c(b-c-e)tx-pinctrl.dtsi>
+
+/ {
+	model = "CRSF to FSDB01 board";
+	compatible = "custom,crsf-fsdb01";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	/* TODO: pin assignments are provisional until the schematic is final */
+	leds: leds {
+		compatible = "gpio-leds";
+
+		green_led: led_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+			label = "Status LED (green)";
+		};
+
+		red_led: led_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
+			label = "Status LED (red)";
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		led1 = &red_led;
+		crsf-uart = &usart1;
+		watchdog0 = &iwdg;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+/* No crystal: USB is clocked from HSI48, trimmed against USB SOF by the CRS */
+&clk_hsi48 {
+	status = "okay";
+	crs-usb-sof;
+};
+
+/* 64 MHz SYSCLK from the 16 MHz HSI */
+&pll {
+	div-m = <1>;
+	mul-n = <8>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(64)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* CRSF link: 420000 baud, 8N1, full duplex */
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <420000>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};

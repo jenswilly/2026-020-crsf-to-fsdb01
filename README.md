@@ -1,8 +1,8 @@
-# CRSF to FSDB01
+# CRSF to FS-DB01
 
-Firmware that bridges a CRSF (Crossfire) RC link to FSDB01.
+Firmware that takes RC input from an **ExpressLRS (ELRS) receiver** in **CRSF** format and converts it to the proprietary single-wire protocol of the **FlySky FS-DB01** LED control module. This lets an ELRS radio control the module's lighting functions: turn signals, illumination, reverse/brake, and the no-signal indication.
 
-<!-- TODO: describe FSDB01 and what the bridge does -->
+The FS-DB01 protocol is documented from the reverse-engineered reference implementation in [osos11-Git/F401_FMS_FCX10_LED_REVERSE](https://github.com/osos11-Git/F401_FMS_FCX10_LED_REVERSE), an STM32F401 CubeIDE project. See `Core/Src/main.c` there.
 
 Built on [Zephyr RTOS](https://zephyrproject.org/) 4.4 for the STM32G0B1. The application code is C++23.
 
@@ -25,6 +25,7 @@ Custom board pins are **provisional** until the schematic is final.
 | USB D− / D+         | PA11 / PA12          | PA11 (CN10-14) / PA12 (CN10-12)      |
 | `led0`              | PB0 (green)          | PA5 (LD4, green)                     |
 | `led1`              | PB1 (red)            | –                                    |
+| FS-DB01 signal out  | TBD                  | TBD                                  |
 | SWD                 | PA13 SWDIO, PA14 SWCLK | on-board ST-LINK                   |
 
 The CRSF link runs at 420000 baud, 8N1, full duplex.
@@ -36,6 +37,40 @@ The Zephyr console and shell use **USB CDC ACM** on the MCU's own USB pins on bo
 On the Nucleo this needs an **external USB connector**, wired to PA12 (D+), PA11 (D−) and GND on the morpho header. Don't connect its VBUS while the board is also powered from the ST-LINK USB. The ST-LINK virtual COM port (USART2) is not used.
 
 The device currently uses Zephyr's test USB VID/PID (`0x2fe3:0x0004`). Production needs its own.
+
+## Protocols
+
+### Input: CRSF from an ELRS receiver
+
+- UART, **420000 baud, 8N1**, non-inverted, full duplex: receiver TX → MCU RX. MCU TX → receiver RX is only needed for telemetry.
+- Frame layout: `[sync 0xC8] [len] [type] [payload …] [CRC8]`. `len` counts type + payload + CRC. The CRC8 uses the DVB-S2 polynomial `0xD5` and covers type + payload.
+- `0x16` *RC channels packed*: 16 channels × 11 bits, little-endian bit-packed. Nominal values run 172–1811 (≈ 988–2012 µs), with 992 at center.
+- `0x14` *Link statistics*: RSSI, LQ, SNR, etc. Useful for failsafe / no-signal detection.
+
+### Output: FS-DB01 LED module
+
+All of the following comes from the reverse-engineered reference implementation; it isn't an official specification.
+
+- A single GPIO line, idle **low**, driven from a 1 ms time base.
+- A frame is **9 bits**, sent bit 0 first, followed by **3 ms low**. Each bit takes 3 ms, so a frame takes 30 ms and repeats continuously.
+  - `1` = 2 ms high, then 1 ms low
+  - `0` = 1 ms high, then 2 ms low
+
+| Bit | Function                                         |
+|-----|--------------------------------------------------|
+| 0   | Right turn signal                                |
+| 1   | Left turn signal                                 |
+| 2   | Illumination, step 1                             |
+| 3   | Illumination, step 2                             |
+| 4   | Unknown; probably unused                         |
+| 5   | Reverse / brake                                  |
+| 6   | No-signal fast blink (low priority)              |
+| 7   | No-signal slow blink (high priority)             |
+| 8   | Always 0                                         |
+
+The reference firmware's power-on state is bits 6 and 7 set: the no-signal indication.
+
+The mapping from CRSF channels to FS-DB01 bits, and the failsafe behavior, are **not decided yet**.
 
 ## Development environment
 

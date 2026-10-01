@@ -1,6 +1,14 @@
 # Project guidelines for Claude
 
-See `README.md` for the project overview, hardware, pin assignments and build commands.
+See `README.md` for the project overview, hardware, pin assignments, protocol details and build commands.
+
+## What this project is
+
+A bridge that reads **CRSF** from an **ExpressLRS receiver** (UART, 420000 baud) and drives a **FlySky FS-DB01** LED control module over its proprietary single-wire, pulse-width-coded protocol. That protocol is a 9-bit frame with 3 ms bit cells plus a 3 ms low gap.
+
+- The FS-DB01 protocol is known only from the reverse-engineered reference implementation https://github.com/osos11-Git/F401_FMS_FCX10_LED_REVERSE (`Core/Src/main.c`, STM32F401 HAL). Treat it as the source of truth, and check the code there before changing timing or bit meanings. The README's protocol section is a summary of it.
+- The FS-DB01 output pin is not assigned yet. When it is, expose it as a devicetree alias (e.g. `fsdb01-out`) on both boards.
+- The CRSF channel → FS-DB01 bit mapping and the failsafe behavior are still open design decisions. Ask the user rather than inventing them.
 
 ## Toolchain and building
 

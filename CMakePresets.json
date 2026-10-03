@@ -21,6 +21,16 @@
       }
     },
     {
+      "name": "nucleo-vcp",
+      "inherits": "nucleo",
+      "displayName": "NUCLEO-G0B1RE (console on ST-LINK VCP)",
+      "description": "Development board with console/shell on USART2 (ST-LINK virtual COM port) instead of USB CDC ACM, plus debug Kconfig",
+      "cacheVariables": {
+        "EXTRA_DTC_OVERLAY_FILE": "${sourceDir}/boards/nucleo_vcp_console.overlay",
+        "EXTRA_CONF_FILE": "${sourceDir}/boards/nucleo_vcp.conf"
+      }
+    },
+    {
       "name": "custom",
       "inherits": "base",
       "displayName": "Custom board (crsf_fsdb01)",
@@ -32,6 +42,7 @@
   ],
   "buildPresets": [
     { "name": "nucleo", "configurePreset": "nucleo", "displayName": "NUCLEO-G0B1RE" },
+    { "name": "nucleo-vcp", "configurePreset": "nucleo-vcp", "displayName": "NUCLEO-G0B1RE (VCP console)" },
     { "name": "custom", "configurePreset": "custom", "displayName": "Custom board (crsf_fsdb01)" }
   ]
 }

@@ -32,9 +32,11 @@ The CRSF link runs at 420000 baud, 8N1, full duplex.
 
 ### Console / CLI
 
-The Zephyr console and shell use **USB CDC ACM** on the MCU's own USB pins on both boards. There is no UART console.
+The Zephyr console and shell use **USB CDC ACM** on the MCU's own USB pins on both boards. There is no UART console, except for the optional `nucleo-vcp` build below.
 
-On the Nucleo this needs an **external USB connector**, wired to PA12 (D+), PA11 (D−) and GND on the morpho header. Don't connect its VBUS while the board is also powered from the ST-LINK USB. The ST-LINK virtual COM port (USART2) is not used.
+On the Nucleo this needs an **external USB connector**, wired to PA12 (D+), PA11 (D−) and GND on the morpho header. Don't connect its VBUS while the board is also powered from the ST-LINK USB. The ST-LINK virtual COM port (USART2) is not used by default.
+
+For development without the extra connector, the `nucleo-vcp` preset adds `boards/nucleo_vcp_console.overlay`, which moves the console and shell to USART2, and `boards/nucleo_vcp.conf` for extra development Kconfig (e.g. `CONFIG_DEBUG_OPTIMIZATIONS`). Output then appears on the ST-LINK virtual COM port (usually `/dev/ttyACM0`) at 115200 baud. CDC ACM is still built in but isn't the console.
 
 The device currently uses Zephyr's test USB VID/PID (`0x2fe3:0x0004`). Production needs its own.
 
@@ -95,12 +97,13 @@ Builds are driven by **CMake presets** (`CMakePresets.json`), one per board:
 | Preset   | Board target                | Build directory |
 |----------|-----------------------------|-----------------|
 | `nucleo` | `nucleo_g0b1re/stm32g0b1xx` | `build_nucleo/` |
+| `nucleo-vcp` | `nucleo_g0b1re/stm32g0b1xx`, console on ST-LINK VCP | `build_nucleo-vcp/` |
 | `custom` | `crsf_fsdb01/stm32g0b1xx`   | `build_custom/` |
 
 ### In VS Code
 
 - **Build:** choose the preset in the CMake Tools status bar, then click Build (F7). IntelliSense follows the active preset.
-- **Flash / menuconfig:** use the tasks in `.vscode/tasks.json` (*Tasks: Run Task* → `Flash: nucleo`, `Flash: custom`, …).
+- **Flash / menuconfig:** use the tasks in `.vscode/tasks.json` (*Tasks: Run Task* → `Flash: nucleo`, `Flash: nucleo-vcp`, `Flash: custom`, …).
 - **Debug:** use the Cortex-Debug launch configs in `.vscode/launch.json` (`Debug: nucleo`, `Debug: custom`, `Attach: custom`). They build first, then flash and debug via OpenOCD + ST-LINK.
 
 ### From the command line
@@ -129,6 +132,8 @@ src/                            Application sources (C++)
 boards/
   usb_console.dtsi              CDC ACM console/shell node, shared by both boards
   nucleo_g0b1re.overlay         Nucleo: crsf-uart alias, USB console, frees PA11/PA12
+  nucleo_vcp_console.overlay    Nucleo dev option (nucleo-vcp preset): console on ST-LINK VCP
+  nucleo_vcp.conf               Extra Kconfig for the nucleo-vcp preset (debug settings)
   crsf_fsdb01.overlay           Custom board: USB console
   custom/crsf_fsdb01/           Custom board definition (Zephyr hardware model v2)
 .vscode/                        Tasks (build/flash/menuconfig) and Cortex-Debug launch configs

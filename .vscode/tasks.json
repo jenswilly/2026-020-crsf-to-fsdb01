@@ -9,6 +9,13 @@
       "problemMatcher": ["$gcc"]
     },
     {
+      "label": "Build: nucleo-vcp",
+      "type": "shell",
+      "command": "cmake --preset nucleo-vcp && cmake --build --preset nucleo-vcp",
+      "group": "build",
+      "problemMatcher": ["$gcc"]
+    },
+    {
       "label": "Build: custom",
       "type": "shell",
       "command": "cmake --preset custom && cmake --build --preset custom",
@@ -20,6 +27,13 @@
       "type": "shell",
       "command": "cmake --build --preset nucleo --target flash",
       "dependsOn": "Build: nucleo",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash: nucleo-vcp",
+      "type": "shell",
+      "command": "cmake --build --preset nucleo-vcp --target flash",
+      "dependsOn": "Build: nucleo-vcp",
       "problemMatcher": []
     },
     {

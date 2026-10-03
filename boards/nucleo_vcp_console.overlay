@@ -1,0 +1,14 @@
+/*
+ * NUCLEO-G0B1RE development option: console and shell on USART2, which is
+ * wired to the ST-LINK virtual COM port (PA2/PA3), instead of USB CDC ACM.
+ * Applied on top of nucleo_g0b1re.overlay by the nucleo-vcp preset.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+	};
+};

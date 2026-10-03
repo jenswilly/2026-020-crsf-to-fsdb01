@@ -14,6 +14,18 @@
       "preLaunchTask": "Build: nucleo"
     },
     {
+      "name": "Debug: nucleo-vcp",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build_nucleo-vcp/zephyr/zephyr.elf",
+      "configFiles": ["/opt/zephyrproject/zephyr/boards/st/nucleo_g0b1re/support/openocd.cfg"],
+      "device": "STM32G0B1RE",
+      "runToEntryPoint": "main",
+      "preLaunchTask": "Build: nucleo-vcp"
+    },
+    {
       "name": "Debug: custom",
       "type": "cortex-debug",
       "request": "launch",

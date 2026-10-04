@@ -5,6 +5,8 @@ menuconfig FSDB01
 	default y
 	depends on DT_HAS_FLYSKY_FSDB01_ENABLED
 	select GPIO
+	# Absolute timeouts (K_TIMEOUT_ABS_TICKS) for drift-free bit timing
+	select TIMEOUT_64BIT
 	help
 	  Driver for the FlySky FS-DB01 LED control module's single-wire
 	  protocol.

@@ -34,6 +34,7 @@ int main() {
         LOG_ERR("FS-DB01 %s not ready", fsdb01->name);
         return 0;
     }
+    fsdb01_disable(fsdb01); // Start with FS-DB01 disabled
 
     LOG_INF("Running on %s, CRSF on %s (C++ %ld)", CONFIG_BOARD_TARGET, crsf_uart->name,
             __cplusplus);

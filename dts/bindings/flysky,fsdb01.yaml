@@ -19,3 +19,10 @@ properties:
     required: true
     description: |
       Signal line to the module. Idle (inactive) is low.
+
+  idle-high:
+    type: boolean
+    description: |
+      Hold the line high (logical 1) while output is disabled. Without this
+      property it is held low. While enabled, the line is low between frames
+      regardless of this setting, as the protocol requires.

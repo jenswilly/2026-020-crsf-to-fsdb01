@@ -16,13 +16,13 @@ extern "C" {
 #endif
 
 /* Frame bits, sent bit 0 first (see README, FS-DB01 protocol) */
-#define FSDB01_TURN_RIGHT        BIT(0)
-#define FSDB01_TURN_LEFT         BIT(1)
-#define FSDB01_ILLUMINATION_1    BIT(2)
-#define FSDB01_ILLUMINATION_2    BIT(3)
-#define FSDB01_REVERSE_BRAKE     BIT(5)
-#define FSDB01_NO_SIGNAL_FAST    BIT(6)
-#define FSDB01_NO_SIGNAL_SLOW    BIT(7)
+#define FSDB01_TURN_RIGHT     BIT(0)
+#define FSDB01_TURN_LEFT      BIT(1)
+#define FSDB01_ILLUMINATION_1 BIT(2)
+#define FSDB01_ILLUMINATION_2 BIT(3)
+#define FSDB01_REVERSE_BRAKE  BIT(5)
+#define FSDB01_NO_SIGNAL_FAST BIT(6)
+#define FSDB01_NO_SIGNAL_SLOW BIT(7)
 
 #define FSDB01_FRAME_BITS 9
 #define FSDB01_FRAME_MASK BIT_MASK(FSDB01_FRAME_BITS)
@@ -39,7 +39,37 @@ extern "C" {
  * @retval 0 on success.
  * @retval -EINVAL if @p frame has bits outside the 9-bit frame.
  */
-int fsdb01_set_frame(const struct device *dev, uint16_t frame);
+int fsdb01_set_frame(const struct device* dev, uint16_t frame);
+
+/**
+ * @brief Start sending frames to the module.
+ *
+ * The first frame starts after a 3 ms low gap. Does nothing if already
+ * enabled. The driver is enabled at boot.
+ *
+ * Must not be called from an ISR.
+ *
+ * @param dev FS-DB01 device.
+ *
+ * @retval 0 on success.
+ * @retval <0 GPIO error.
+ */
+int fsdb01_enable(const struct device* dev);
+
+/**
+ * @brief Stop sending and hold the line at its idle level.
+ *
+ * The idle level is set by the devicetree property @c idle-high. A frame in
+ * progress is cut off.
+ *
+ * Must not be called from an ISR.
+ *
+ * @param dev FS-DB01 device.
+ *
+ * @retval 0 on success.
+ * @retval <0 GPIO error.
+ */
+int fsdb01_disable(const struct device* dev);
 
 #ifdef __cplusplus
 }

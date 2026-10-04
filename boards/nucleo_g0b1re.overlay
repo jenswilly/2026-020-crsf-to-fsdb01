@@ -4,6 +4,7 @@
  * Console/shell on USB CDC ACM via an external USB connector wired to
  * PA12 = D+ (CN10-12), PA11 = D- (CN10-14) and GND.
  * CRSF link on USART1: PC4 = TX (Arduino D1), PC5 = RX (Arduino D0).
+ * FS-DB01 signal out: PA10 (Arduino D2), placeholder.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,8 +12,15 @@
 #include "usb_console.dtsi"
 
 / {
+	/* TODO: placeholder pin, FS-DB01 output not assigned yet */
+	fsdb01: fsdb01 {
+		compatible = "flysky,fsdb01";
+		out-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+	};
+
 	aliases {
 		crsf-uart = &usart1;
+		fsdb01 = &fsdb01;
 	};
 };
 

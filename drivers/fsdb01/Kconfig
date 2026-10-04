@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FSDB01
+	bool "FlySky FS-DB01 LED module driver"
+	default y
+	depends on DT_HAS_FLYSKY_FSDB01_ENABLED
+	select GPIO
+	help
+	  Driver for the FlySky FS-DB01 LED control module's single-wire
+	  protocol.
+
+if FSDB01
+
+config FSDB01_INIT_PRIORITY
+	int "Init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Device init priority. Must be after the GPIO driver.
+
+module = FSDB01
+module-str = fsdb01
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # FSDB01

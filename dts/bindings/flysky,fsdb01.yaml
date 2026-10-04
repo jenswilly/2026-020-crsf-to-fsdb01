@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  FlySky FS-DB01 LED control module, driven over its proprietary
+  single-wire, pulse-width-coded protocol (9-bit frames, 3 ms bit cells).
+
+  Example:
+
+    fsdb01: fsdb01 {
+        compatible = "flysky,fsdb01";
+        out-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+    };
+
+compatible: "flysky,fsdb01"
+
+properties:
+  out-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Signal line to the module. Idle (inactive) is low.

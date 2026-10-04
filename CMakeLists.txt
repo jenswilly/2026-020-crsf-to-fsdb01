@@ -9,3 +9,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(crsf_to_fsdb01)
 
 target_sources(app PRIVATE src/main.cpp)
+
+# In-tree drivers; bindings are in dts/bindings, Kconfig in drivers/
+add_subdirectory(drivers)
+target_include_directories(app PRIVATE drivers/fsdb01)

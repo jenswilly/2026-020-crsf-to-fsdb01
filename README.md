@@ -25,7 +25,7 @@ Custom board pins are **provisional** until the schematic is final.
 | USB D− / D+         | PA11 / PA12          | PA11 (CN10-14) / PA12 (CN10-12)      |
 | `led0`              | PB0 (green)          | PA5 (LD4, green)                     |
 | `led1`              | PB1 (red)            | –                                    |
-| FS-DB01 signal out  | TBD                  | TBD                                  |
+| `fsdb01` signal out | PA8 (placeholder)    | PA10 (Arduino D2, placeholder)       |
 | SWD                 | PA13 SWDIO, PA14 SWCLK | on-board ST-LINK                   |
 
 The CRSF link runs at 420000 baud, 8N1, full duplex.
@@ -128,7 +128,11 @@ The `flash`, `debug` and `debugserver` targets call Zephyr's west runners intern
 CMakeLists.txt                  App build; adds this repo as a BOARD_ROOT
 CMakePresets.json               Configure/build presets per board
 prj.conf                        Common Kconfig: C++23, full libstdc++, logging, shell, USB CDC ACM
+Kconfig                         App Kconfig root: sources drivers/Kconfig, then Zephyr
 src/                            Application sources (C++)
+drivers/                        In-tree device drivers (C)
+  fsdb01/                       FS-DB01 driver: source, header, Kconfig
+dts/bindings/                   Devicetree bindings for the in-tree drivers (flysky,fsdb01)
 boards/
   usb_console.dtsi              CDC ACM console/shell node, shared by both boards
   nucleo_g0b1re.overlay         Nucleo: crsf-uart alias, USB console, frees PA11/PA12

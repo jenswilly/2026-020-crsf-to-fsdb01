@@ -32,7 +32,14 @@
 		};
 	};
 
+	/* TODO: placeholder pin, FS-DB01 output not assigned yet */
+	fsdb01: fsdb01 {
+		compatible = "flysky,fsdb01";
+		out-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+	};
+
 	aliases {
+		fsdb01 = &fsdb01;
 		led0 = &green_led;
 		led1 = &red_led;
 		crsf-uart = &usart1;

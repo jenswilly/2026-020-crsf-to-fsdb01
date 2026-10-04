@@ -7,12 +7,15 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include "fsdb01.h"
+
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 namespace {
 
 constexpr gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 const device* const crsf_uart = DEVICE_DT_GET(DT_ALIAS(crsf_uart));
+const device* const fsdb01 = DEVICE_DT_GET(DT_ALIAS(fsdb01));
 
 }  // namespace
 
@@ -24,6 +27,11 @@ int main() {
 
     if (!device_is_ready(crsf_uart)) {
         LOG_ERR("CRSF UART %s not ready", crsf_uart->name);
+        return 0;
+    }
+
+    if (!device_is_ready(fsdb01)) {
+        LOG_ERR("FS-DB01 %s not ready", fsdb01->name);
         return 0;
     }
 

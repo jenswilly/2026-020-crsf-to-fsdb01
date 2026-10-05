@@ -7,6 +7,7 @@
 #ifndef FSDB01_H_
 #define FSDB01_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
@@ -40,6 +41,24 @@ extern "C" {
  * @retval -EINVAL if @p frame has bits outside the 9-bit frame.
  */
 int fsdb01_set_frame(const struct device* dev, uint16_t frame);
+
+/**
+ * @brief Get the frame currently set for sending.
+ *
+ * @param dev FS-DB01 device.
+ *
+ * @return Frame bits (FSDB01_* flags).
+ */
+uint16_t fsdb01_get_frame(const struct device* dev);
+
+/**
+ * @brief Check whether frames are being sent.
+ *
+ * @param dev FS-DB01 device.
+ *
+ * @return true if enabled, false if the line is held idle.
+ */
+bool fsdb01_is_enabled(const struct device* dev);
 
 /**
  * @brief Start sending frames to the module.

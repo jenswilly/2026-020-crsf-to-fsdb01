@@ -40,6 +40,23 @@ For development without the extra connector, the `nucleo-vcp` preset adds `board
 
 The device currently uses Zephyr's test USB VID/PID (`0x2fe3:0x0004`). Production needs its own.
 
+### Shell commands
+
+`leds` (in `src/shell_leds.cpp`) drives the FS-DB01 driver by hand, for testing the output before the CRSF mapping exists:
+
+| Command                       | Action                                                       |
+|-------------------------------|--------------------------------------------------------------|
+| `leds status`                 | Output enabled/disabled, raw frame (hex), each bit on/off    |
+| `leds on <led\|all\|0-7>`     | Set bit(s)                                                   |
+| `leds off <led\|all\|0-7>`    | Clear bit(s)                                                 |
+| `leds toggle <led\|all\|0-7>` | Toggle bit(s)                                                |
+| `leds enable`                 | Start sending frames                                         |
+| `leds disable`                | Stop sending and hold the line at its idle level             |
+
+LED names (Tab completes them): `right` (bit 0), `left` (1), `ill1` (2), `ill2` (3), `brake` (5), `nosig_fast` (6), `nosig_slow` (7). Use `4` for the unknown bit 4. `all` covers bits 0–7; bit 8 is always 0.
+
+`main()` disables the output at boot, so run `leds enable` before expecting anything on the wire. on/off/toggle only change the frame bits.
+
 ## Protocols
 
 ### Input: CRSF from an ELRS receiver
@@ -129,7 +146,7 @@ CMakeLists.txt                  App build; adds this repo as a BOARD_ROOT
 CMakePresets.json               Configure/build presets per board
 prj.conf                        Common Kconfig: C++23, full libstdc++, logging, shell, USB CDC ACM
 Kconfig                         App Kconfig root: sources drivers/Kconfig, then Zephyr
-src/                            Application sources (C++)
+src/                            Application sources (C++); shell commands in src/shell_*.cpp
 drivers/                        In-tree device drivers (C)
   fsdb01/                       FS-DB01 driver: source, header, Kconfig
 dts/bindings/                   Devicetree bindings for the in-tree drivers (flysky,fsdb01)

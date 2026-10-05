@@ -8,7 +8,10 @@ list(APPEND BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(crsf_to_fsdb01)
 
-target_sources(app PRIVATE src/main.cpp)
+target_sources(app PRIVATE 
+    src/main.cpp
+    src/shell_leds.cpp
+)
 
 # In-tree drivers; bindings are in dts/bindings, Kconfig in drivers/
 add_subdirectory(drivers)

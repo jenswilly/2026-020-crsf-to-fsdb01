@@ -26,8 +26,9 @@ A bridge that reads **CRSF** from an **ExpressLRS receiver** (UART, 420000 baud)
 
 - Application code is **C++23** (`CONFIG_STD_CPP23`) with full libstdc++ (`CONFIG_REQUIRES_FULL_LIBCPP`). Exceptions and RTTI are off; don't use them.
 - Sources go in `src/` as `.cpp` and must be listed in `CMakeLists.txt`.
+- Shell commands go in `src/shell_<group>.cpp`, one file per command group (e.g. `src/shell_leds.cpp` for `leds`), never in `main.cpp`. Add them with `target_sources_ifdef(CONFIG_SHELL …)`. Pass `NULL`, not `nullptr`, inside Zephyr shell macros: they expand to `cond ? arg : NULL`, and `NULL` is an `int` here.
 - Zephyr's own code stays C. Use Zephyr C APIs directly from C++. Don't add wrappers unless they earn their keep.
-- Tabs for indentation, matching Zephyr style.
+- Format with the repo's `.clang-format`: Google-based, 4-space indent, 100 columns.
 - Avoid dynamic allocation in steady-state code paths.
 
 ## Boards and devicetree

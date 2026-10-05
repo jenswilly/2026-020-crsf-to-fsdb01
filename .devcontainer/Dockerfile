@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         gcc-multilib g++-multilib libsdl2-dev libmagic1 \
         python3 python3-dev python3-pip python3-venv python3-tk \
         openocd stlink-tools gdb-multiarch usbutils \
-        sudo bash-completion less nano \
+        sudo bash-completion less nano screen ripgrep \
     && rm -rf /var/lib/apt/lists/*
 
 # CMake and Ninja: official release binaries (the CMake download is checksum-verified)

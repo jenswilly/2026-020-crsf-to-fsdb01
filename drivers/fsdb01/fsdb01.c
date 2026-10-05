@@ -63,6 +63,18 @@ int fsdb01_set_frame(const struct device* dev, uint16_t frame) {
     return 0;
 }
 
+uint16_t fsdb01_get_frame(const struct device* dev) {
+    struct fsdb01_data* data = dev->data;
+
+    return (uint16_t)atomic_get(&data->frame);
+}
+
+bool fsdb01_is_enabled(const struct device* dev) {
+    struct fsdb01_data* data = dev->data;
+
+    return atomic_get(&data->enabled) != 0;
+}
+
 static void fsdb01_schedule(struct fsdb01_data* data, uint32_t ms) {
     data->next_tick += k_ms_to_ticks_ceil64(ms);
     k_timer_start(&data->timer, K_TIMEOUT_ABS_TICKS(data->next_tick), K_NO_WAIT);

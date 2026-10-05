@@ -27,7 +27,7 @@
     "containerEnv": {
         "CCACHE_DIR": "/home/vscode/.cache/ccache"
     },
-    "postCreateCommand": "sudo chown vscode:vscode /home/vscode/.cache/ccache",
+    "postCreateCommand": "sudo chown vscode:vscode /home/vscode/.cache /home/vscode/.cache/ccache",
     "customizations": {
         "vscode": {
             "extensions": [

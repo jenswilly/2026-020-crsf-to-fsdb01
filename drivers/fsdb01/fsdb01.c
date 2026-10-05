@@ -29,8 +29,8 @@ LOG_MODULE_REGISTER(fsdb01, CONFIG_FSDB01_LOG_LEVEL);
 
 struct fsdb01_config {
     struct gpio_dt_spec out;
-    /* Logical line level while disabled */
-    int idle_level;
+    /* Invert every level driven on the line (inverting level shifter) */
+    bool invert;
 };
 
 struct fsdb01_data {
@@ -51,6 +51,11 @@ struct fsdb01_data {
     /* Absolute deadline of the next edge, so re-arming doesn't accumulate drift */
     int64_t next_tick;
 };
+
+/* Drive the line to a protocol level, applying the invert setting */
+static int fsdb01_set_line(const struct fsdb01_config* config, int level) {
+    return gpio_pin_set_dt(&config->out, level ^ config->invert);
+}
 
 int fsdb01_set_frame(const struct device* dev, uint16_t frame) {
     struct fsdb01_data* data = dev->data;
@@ -89,7 +94,7 @@ int fsdb01_enable(const struct device* dev) {
 
     if (!atomic_get(&data->enabled)) {
         /* The timer is stopped, so the engine state is ours to reset */
-        ret = gpio_pin_set_dt(&config->out, 0);
+        ret = fsdb01_set_line(config, 0);
         if (ret == 0) {
             /* Start in the gap, so the first frame begins after 3 ms low */
             data->bit = FSDB01_FRAME_BITS;
@@ -117,7 +122,7 @@ int fsdb01_disable(const struct device* dev) {
      */
     atomic_set(&data->enabled, 0);
     k_timer_stop(&data->timer);
-    ret = gpio_pin_set_dt(&config->out, config->idle_level);
+    ret = fsdb01_set_line(config, 0);
 
     k_mutex_unlock(&data->lock);
     return ret;
@@ -125,7 +130,7 @@ int fsdb01_disable(const struct device* dev) {
 
 /* Drive the line high for the current bit; returns the high time in ms */
 static uint32_t fsdb01_start_bit(struct fsdb01_data* data, const struct fsdb01_config* config) {
-    (void)gpio_pin_set_dt(&config->out, 1);
+    (void)fsdb01_set_line(config, 1);
     data->high = true;
 
     return (data->tx_frame & BIT(data->bit)) ? FSDB01_ONE_HIGH_MS : FSDB01_ZERO_HIGH_MS;
@@ -146,7 +151,7 @@ static void fsdb01_timer_handler(struct k_timer* timer) {
         uint32_t high_ms =
             (data->tx_frame & BIT(data->bit)) ? FSDB01_ONE_HIGH_MS : FSDB01_ZERO_HIGH_MS;
 
-        (void)gpio_pin_set_dt(&config->out, 0);
+        (void)fsdb01_set_line(config, 0);
         data->high = false;
         ms = FSDB01_CELL_MS - high_ms;
     } else if (++data->bit < FSDB01_FRAME_BITS) {
@@ -174,7 +179,9 @@ static int fsdb01_init(const struct device* dev) {
         return -ENODEV;
     }
 
-    ret = gpio_pin_configure_dt(&config->out, GPIO_OUTPUT_INACTIVE);
+    /* Start at the protocol's low level */
+    ret = gpio_pin_configure_dt(&config->out,
+                                config->invert ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
     if (ret < 0) {
         LOG_ERR("Failed to configure output GPIO (%d)", ret);
         return ret;
@@ -192,7 +199,7 @@ static int fsdb01_init(const struct device* dev) {
 #define FSDB01_DEFINE(inst)                                                                    \
     static const struct fsdb01_config fsdb01_config_##inst = {                                 \
         .out = GPIO_DT_SPEC_INST_GET(inst, out_gpios),                                         \
-        .idle_level = DT_INST_PROP(inst, idle_high),                                           \
+        .invert = DT_INST_PROP(inst, invert),                                                  \
     };                                                                                         \
                                                                                                \
     static struct fsdb01_data fsdb01_data_##inst;                                              \

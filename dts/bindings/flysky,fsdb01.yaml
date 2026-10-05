@@ -20,9 +20,9 @@ properties:
     description: |
       Signal line to the module. Idle (inactive) is low.
 
-  idle-high:
+  invert:
     type: boolean
     description: |
-      Hold the line high (logical 1) while output is disabled. Without this
-      property it is held low. While enabled, the line is low between frames
-      regardless of this setting, as the protocol requires.
+      Invert every level driven on the line: frames, the inter-frame gap,
+      the disabled state and the level at boot. Use this when the signal
+      goes through an inverting level shifter.

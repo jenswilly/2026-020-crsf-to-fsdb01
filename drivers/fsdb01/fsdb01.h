@@ -56,7 +56,7 @@ uint16_t fsdb01_get_frame(const struct device* dev);
  *
  * @param dev FS-DB01 device.
  *
- * @return true if enabled, false if the line is held idle.
+ * @return true if enabled, false if the line is held low.
  */
 bool fsdb01_is_enabled(const struct device* dev);
 
@@ -76,10 +76,10 @@ bool fsdb01_is_enabled(const struct device* dev);
 int fsdb01_enable(const struct device* dev);
 
 /**
- * @brief Stop sending and hold the line at its idle level.
+ * @brief Stop sending and hold the line low.
  *
- * The idle level is set by the devicetree property @c idle-high. A frame in
- * progress is cut off.
+ * Low is the protocol level, so the line is high if the devicetree property
+ * @c invert is set. A frame in progress is cut off.
  *
  * Must not be called from an ISR.
  *

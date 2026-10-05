@@ -51,7 +51,7 @@ The device currently uses Zephyr's test USB VID/PID (`0x2fe3:0x0004`). Productio
 | `leds off <led\|all\|0-7>`    | Clear bit(s)                                                 |
 | `leds toggle <led\|all\|0-7>` | Toggle bit(s)                                                |
 | `leds enable`                 | Start sending frames                                         |
-| `leds disable`                | Stop sending and hold the line at its idle level             |
+| `leds disable`                | Stop sending and hold the line low (high with `invert`)      |
 
 LED names (Tab completes them): `right` (bit 0), `left` (1), `ill1` (2), `ill2` (3), `brake` (5), `nosig_fast` (6), `nosig_slow` (7). Use `4` for the unknown bit 4. `all` covers bits 0–7; bit 8 is always 0.
 
@@ -71,6 +71,7 @@ LED names (Tab completes them): `right` (bit 0), `left` (1), `ill1` (2), `ill2` 
 All of the following comes from the reverse-engineered reference implementation; it isn't an official specification.
 
 - A single GPIO line, idle **low**, driven from a 1 ms time base.
+  If the signal goes through an inverting level shifter, add the `invert` property to the `fsdb01` devicetree node. The driver then inverts every level it drives, including the disabled state.
 - A frame is **9 bits**, sent bit 0 first, followed by **3 ms low**. Each bit takes 3 ms, so a frame takes 30 ms and repeats continuously.
   - `1` = 2 ms high, then 1 ms low
   - `0` = 1 ms high, then 2 ms low
@@ -143,6 +144,7 @@ The `flash`, `debug` and `debugserver` targets call Zephyr's west runners intern
 
 ```
 CMakeLists.txt                  App build; adds this repo as a BOARD_ROOT
+NOTES.md                        Handoff notes: status, decisions, open items
 CMakePresets.json               Configure/build presets per board
 prj.conf                        Common Kconfig: C++23, full libstdc++, logging, shell, USB CDC ACM
 Kconfig                         App Kconfig root: sources drivers/Kconfig, then Zephyr

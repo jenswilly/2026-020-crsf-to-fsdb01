@@ -23,6 +23,8 @@ Last updated: 2026-10-05.
 - **`invert` DT property** inverts every level (frames, gap, disabled state, level at boot) for an inverting level shifter. Don't combine it with `GPIO_ACTIVE_LOW` in `out-gpios`; the two cancel out.
 - **`nucleo-vcp` preset:** console/shell on the ST-LINK virtual COM port (USART2, 115200) via `boards/nucleo_vcp_console.overlay`, plus debug Kconfig from `boards/nucleo_vcp.conf`. Avoids wiring a USB connector to PA11/PA12. Production stays CDC-ACM-only.
 
+- **Flashing uses OpenOCD on both boards.** The stock Nucleo board defaults to the STM32CubeProgrammer runner, which isn't in the container (ST's download is login-gated, so the Dockerfile can't fetch it). The `nucleo` preset, and `nucleo-vcp` through it, sets `BOARD_FLASH_RUNNER=openocd`. Adding CubeProgrammer to the image is deferred; it would need the Linux zip placed in `.devcontainer/` by hand.
+
 ## Open items
 
 - **FS-DB01 output pin:** placeholders, PA10 on the Nucleo, PA8 on the custom board.

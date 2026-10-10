@@ -17,7 +17,8 @@
       "displayName": "NUCLEO-G0B1RE",
       "description": "Development board, STM32G0B1RET6",
       "cacheVariables": {
-        "BOARD": "nucleo_g0b1re/stm32g0b1xx"
+        "BOARD": "nucleo_g0b1re/stm32g0b1xx",
+        "BOARD_FLASH_RUNNER": "openocd"
       }
     },
     {

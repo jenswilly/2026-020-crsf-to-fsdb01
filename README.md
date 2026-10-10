@@ -138,7 +138,7 @@ cmake --build --preset custom --target ram_report # memory usage
 
 Replace `custom` with `nucleo` for the development board. For a clean rebuild, delete the build directory, or run `cmake --preset <name> --fresh`.
 
-The `flash`, `debug` and `debugserver` targets call Zephyr's west runners internally. `west` still works on the same build directories, e.g. `west flash -d build_custom`, or `west flash -d build_custom -r <runner>` to pick another runner. The custom board also defines STM32CubeProgrammer, pyOCD and J-Link runners. Flashing and Cortex-Debug both use the OpenOCD and GDB from the Zephyr SDK.
+The `flash`, `debug` and `debugserver` targets call Zephyr's west runners internally. `west` still works on the same build directories, e.g. `west flash -d build_custom`, or `west flash -d build_custom -r <runner>` to pick another runner. Both boards also define STM32CubeProgrammer, pyOCD and J-Link runners, but only OpenOCD is installed in the container. The stock Nucleo board defaults to STM32CubeProgrammer, so the `nucleo` presets set `BOARD_FLASH_RUNNER=openocd`. Flashing and Cortex-Debug both use the OpenOCD and GDB from the Zephyr SDK.
 
 ## Project layout
 

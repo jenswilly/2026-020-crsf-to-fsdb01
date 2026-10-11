@@ -18,7 +18,7 @@ A bridge that reads **CRSF** from an **ExpressLRS receiver** (UART, 420000 baud)
 - From the host, run commands in the running devcontainer:
   `devcontainer exec --workspace-folder . bash -c 'cmake --preset custom && cmake --build --preset custom'`
   If no container is running, ask the user to start it rather than building an image yourself.
-- **Use CMake presets, not the nRF Connect extension or `west build`.** Presets `nucleo` and `custom` in `CMakePresets.json` build into `build_nucleo/` and `build_custom/` (gitignored via `build*/`). Use Zephyr targets such as `flash`, `menuconfig` and `ram_report` through `cmake --build --preset <name> --target <target>`.
+- **Use CMake presets, not the nRF Connect extension or `west build`.** Presets in `CMakePresets.json` combine a board with a build mode: `nucleo`/`custom` (release), `nucleo-debug`/`custom-debug` and `nucleo-vcp` (debug). Each builds into `build_<preset>/` (gitignored via `build*/`). Kconfig for one mode goes in `debug.conf` or `release.conf`, not in a board's preset. Use Zephyr targets such as `flash`, `menuconfig` and `ram_report` through `cmake --build --preset <name> --target <target>`.
 - Board-specific build settings (board, extra overlays/conf files, variants) go in `CMakePresets.json` as cache variables. Keep `.vscode/tasks.json` and `.vscode/launch.json` in sync when adding presets.
 - Board targets are fully qualified: `nucleo_g0b1re/stm32g0b1xx` and `crsf_fsdb01/stm32g0b1xx`.
 - **Always build both boards** after changes to code, Kconfig or devicetree. Report errors and warnings. The goal is zero warnings.

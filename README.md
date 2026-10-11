@@ -57,6 +57,29 @@ LED names (Tab completes them): `right` (bit 0), `left` (1), `ill1` (2), `ill2` 
 
 `main()` disables the output at boot, so run `leds enable` before expecting anything on the wire. on/off/toggle only change the frame bits.
 
+`dfu` (in `src/shell_dfu.cpp`) reboots into the USB DFU bootloader; see below.
+
+### Firmware update over USB (DFU)
+
+The `dfu` shell command reboots into the STM32's built-in system bootloader, which enumerates on USB as `0483:df11`. No BOOT0 pin or jumper is used; the option bytes stay at their factory defaults. Then flash with:
+
+```sh
+dfu-util -d 0483:df11 -a 0 -s 0x08000000:leave -D build_custom/zephyr/zephyr.bin
+```
+
+`-d 0483:df11` selects the STM32 bootloader, so other DFU-capable devices, such as some laptop webcams, are never targeted. If several boards are in DFU mode at once, add `-S <serial>` (shown by `dfu-util -l`). **After flashing, power-cycle the board fully.** While erasing, the bootloader sets the `EMPTY` flag in `FLASH_ACR`. While it's set, every reset starts the bootloader again instead of the new firmware, and only a real power-on clears it. `:leave` and the reset button don't, so the board stays in DFU mode. On the Nucleo, the ST-LINK USB also powers the board, so unplug that cable too. Without a power cycle, clear the flag over SWD instead:
+
+```sh
+openocd -f <board openocd.cfg> -c "init; halt; mmw 0x40022000 0 0x00010000; reset run; shutdown"
+```
+
+How it works (`src/bootloader.cpp`): the command stores a marker in `.noinit` RAM and reboots. Early in the next boot, before the clock driver runs, the marker is found and the firmware jumps to system memory (`0x1FFF0000`), so the bootloader starts from an almost-reset state.
+
+This only works while the firmware is running. To recover a board whose firmware doesn't boot, use SWD.
+
+The host needs permission to open `0483:df11`, e.g. a udev rule like the one for the ST-LINK:
+`SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="df11", MODE="0660", GROUP="plugdev"`.
+
 ## Protocols
 
 ### Input: CRSF from an ELRS receiver
@@ -149,6 +172,7 @@ CMakePresets.json               Configure/build presets per board
 prj.conf                        Common Kconfig: C++23, full libstdc++, logging, shell, USB CDC ACM
 Kconfig                         App Kconfig root: sources drivers/Kconfig, then Zephyr
 src/                            Application sources (C++); shell commands in src/shell_*.cpp
+  bootloader.cpp                Reboot into the STM32 USB DFU bootloader (`dfu` command)
 drivers/                        In-tree device drivers (C)
   fsdb01/                       FS-DB01 driver: source, header, Kconfig
 dts/bindings/                   Devicetree bindings for the in-tree drivers (flysky,fsdb01)

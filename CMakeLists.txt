@@ -10,6 +10,8 @@ project(crsf_to_fsdb01)
 
 target_sources(app PRIVATE 
     src/main.cpp
+    src/bootloader.cpp
+    src/shell_dfu.cpp
     src/shell_leds.cpp
 )
 

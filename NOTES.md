@@ -25,13 +25,15 @@ Last updated: 2026-10-05.
 
 - **Flashing uses OpenOCD on both boards.** The stock Nucleo board defaults to the STM32CubeProgrammer runner, which isn't in the container (ST's download is login-gated, so the Dockerfile can't fetch it). The `nucleo` preset, and `nucleo-vcp` through it, sets `BOARD_FLASH_RUNNER=openocd`. Adding CubeProgrammer to the image is deferred; it would need the Linux zip placed in `.devcontainer/` by hand.
 
+- **Firmware update via the `dfu` shell command**, not the BOOT0 pin: it sets a `.noinit` marker and reboots, then a `PRE_KERNEL_1` priority-0 `SYS_INIT` (before the clock driver at priority 1) jumps to the system bootloader at `0x1FFF0000`. The MPU must be disabled before the jump: Zephyr enables it in `arch_kernel_init()`, before `PRE_KERNEL_1`, and its regions make flash read-only, so the bootloader erased fine and then hung on its first write (fixed 2026-10-11, not yet re-tested). Option bytes stay at their factory defaults (`nBOOT_SEL=1`), so PA14-BOOT0 is ignored. Tested 2026-10-11: the bootloader enumerates as `0483:df11` with three alt settings, all reported as `@Internal Flash /0x08000000/256*02Kg`; use alt 0. **Gotcha:** the bootloader leaves `FLASH_ACR.EMPTY` (bit 16) set after the download, so the chip boots into the bootloader again until a real power-on reset (`:leave`, NRST and system resets don't clear it). On the Nucleo, the ST-LINK USB keeps the MCU powered. Clearing the bit over SWD (`mmw 0x40022000 0 0x00010000`) and resetting also works.
+
 ## Open items
 
 - **FS-DB01 output pin:** placeholders, PA10 on the Nucleo, PA8 on the custom board.
 - **CRSF channel → FS-DB01 bit mapping:** not decided.
 - **Failsafe behaviour:** not decided. This includes link-loss detection (timeout, and/or the link-statistics frame), which frame to send, and whether output should stay disabled until the link is up (currently `main()` disables it at boot and nothing enables it).
 - **Application structure:** planned as one control thread that receives CRSF frames from the UART (message queue or ring buffer from the ISR), maps them, handles failsafe and calls `fsdb01_set_frame()`. Not started.
-- **Hardware verification** of the bit engine (see Status).
+- **Hardware verification** of the bit engine (see Status). Flashing over DFU works (2026-10-11), apart from the `EMPTY` gotcha above.
 - **USB VID/PID** is still Zephyr's test ID.
 
 ## Environment notes

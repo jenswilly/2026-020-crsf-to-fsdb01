@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "konnect": {
+      "command": "/home/jenswilly/Konnect/target/release/konnect"
+    }
+  }
+}

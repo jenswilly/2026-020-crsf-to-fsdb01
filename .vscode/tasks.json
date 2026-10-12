@@ -6,27 +6,58 @@
       "type": "shell",
       "command": "cmake --preset nucleo && cmake --build --preset nucleo",
       "group": "build",
-      "problemMatcher": ["$gcc"]
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "Build: nucleo-debug",
+      "type": "shell",
+      "command": "cmake --preset nucleo-debug && cmake --build --preset nucleo-debug",
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
     },
     {
       "label": "Build: nucleo-vcp",
       "type": "shell",
       "command": "cmake --preset nucleo-vcp && cmake --build --preset nucleo-vcp",
       "group": "build",
-      "problemMatcher": ["$gcc"]
+      "problemMatcher": [
+        "$gcc"
+      ]
     },
     {
       "label": "Build: custom",
       "type": "shell",
       "command": "cmake --preset custom && cmake --build --preset custom",
       "group": "build",
-      "problemMatcher": ["$gcc"]
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "Build: custom-debug",
+      "type": "shell",
+      "command": "cmake --preset custom-debug && cmake --build --preset custom-debug",
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
     },
     {
       "label": "Flash: nucleo",
       "type": "shell",
       "command": "cmake --build --preset nucleo --target flash",
       "dependsOn": "Build: nucleo",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash: nucleo-debug",
+      "type": "shell",
+      "command": "cmake --build --preset nucleo-debug --target flash",
+      "dependsOn": "Build: nucleo-debug",
       "problemMatcher": []
     },
     {
@@ -44,15 +75,22 @@
       "problemMatcher": []
     },
     {
-      "label": "Menuconfig: custom",
+      "label": "Flash: custom-debug",
       "type": "shell",
-      "command": "cmake --build --preset custom --target menuconfig",
+      "command": "cmake --build --preset custom-debug --target flash",
+      "dependsOn": "Build: custom-debug",
       "problemMatcher": []
     },
     {
       "label": "Menuconfig: nucleo",
       "type": "shell",
       "command": "cmake --build --preset nucleo --target menuconfig",
+      "problemMatcher": []
+    },
+    {
+      "label": "Menuconfig: custom",
+      "type": "shell",
+      "command": "cmake --build --preset custom --target menuconfig",
       "problemMatcher": []
     }
   ]

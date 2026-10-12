@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Application drivers"
+rsource "drivers/Kconfig"
+endmenu
+
+source "Kconfig.zephyr"

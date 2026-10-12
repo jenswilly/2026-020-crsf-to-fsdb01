@@ -2,12 +2,14 @@
 
 See `README.md` for the project overview, hardware, pin assignments, protocol details and build commands.
 
+See `NOTES.md` for current status, past decisions and open items. Keep it up to date when an item is settled or a notable decision is made.
+
 ## What this project is
 
 A bridge that reads **CRSF** from an **ExpressLRS receiver** (UART, 420000 baud) and drives a **FlySky FS-DB01** LED control module over its proprietary single-wire, pulse-width-coded protocol. That protocol is a 9-bit frame with 3 ms bit cells plus a 3 ms low gap.
 
 - The FS-DB01 protocol is known only from the reverse-engineered reference implementation https://github.com/osos11-Git/F401_FMS_FCX10_LED_REVERSE (`Core/Src/main.c`, STM32F401 HAL). Treat it as the source of truth, and check the code there before changing timing or bit meanings. The README's protocol section is a summary of it.
-- The FS-DB01 output pin is not assigned yet. When it is, expose it as a devicetree alias (e.g. `fsdb01-out`) on both boards.
+- The FS-DB01 driver is in `drivers/fsdb01/` (C, binding `flysky,fsdb01` in `dts/bindings/`). The app gets it through the `fsdb01` alias. The output pins in both boards' devicetree are placeholders until the pin is assigned.
 - The CRSF channel → FS-DB01 bit mapping and the failsafe behavior are still open design decisions. Ask the user rather than inventing them.
 
 ## Toolchain and building
@@ -16,7 +18,7 @@ A bridge that reads **CRSF** from an **ExpressLRS receiver** (UART, 420000 baud)
 - From the host, run commands in the running devcontainer:
   `devcontainer exec --workspace-folder . bash -c 'cmake --preset custom && cmake --build --preset custom'`
   If no container is running, ask the user to start it rather than building an image yourself.
-- **Use CMake presets, not the nRF Connect extension or `west build`.** Presets `nucleo` and `custom` in `CMakePresets.json` build into `build_nucleo/` and `build_custom/` (gitignored via `build*/`). Use Zephyr targets such as `flash`, `menuconfig` and `ram_report` through `cmake --build --preset <name> --target <target>`.
+- **Use CMake presets, not the nRF Connect extension or `west build`.** Presets in `CMakePresets.json` combine a board with a build mode: `nucleo`/`custom` (release), `nucleo-debug`/`custom-debug` and `nucleo-vcp` (debug). Each builds into `build_<preset>/` (gitignored via `build*/`). Kconfig for one mode goes in `debug.conf` or `release.conf`, not in a board's preset. Use Zephyr targets such as `flash`, `menuconfig` and `ram_report` through `cmake --build --preset <name> --target <target>`.
 - Board-specific build settings (board, extra overlays/conf files, variants) go in `CMakePresets.json` as cache variables. Keep `.vscode/tasks.json` and `.vscode/launch.json` in sync when adding presets.
 - Board targets are fully qualified: `nucleo_g0b1re/stm32g0b1xx` and `crsf_fsdb01/stm32g0b1xx`.
 - **Always build both boards** after changes to code, Kconfig or devicetree. Report errors and warnings. The goal is zero warnings.
@@ -26,8 +28,9 @@ A bridge that reads **CRSF** from an **ExpressLRS receiver** (UART, 420000 baud)
 
 - Application code is **C++23** (`CONFIG_STD_CPP23`) with full libstdc++ (`CONFIG_REQUIRES_FULL_LIBCPP`). Exceptions and RTTI are off; don't use them.
 - Sources go in `src/` as `.cpp` and must be listed in `CMakeLists.txt`.
+- Shell commands go in `src/shell_<group>.cpp`, one file per command group (e.g. `src/shell_leds.cpp` for `leds`), never in `main.cpp`. Pass `NULL`, not `nullptr`, inside Zephyr shell macros: they expand to `cond ? arg : NULL`, and `NULL` is an `int` here.
 - Zephyr's own code stays C. Use Zephyr C APIs directly from C++. Don't add wrappers unless they earn their keep.
-- Tabs for indentation, matching Zephyr style.
+- Format with the repo's `.clang-format`: Google-based, 4-space indent, 100 columns.
 - Avoid dynamic allocation in steady-state code paths.
 
 ## Boards and devicetree

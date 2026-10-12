@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/g0/stm32g0b1Xe.dtsi>
 #include <st/g0/stm32g0b1c(b-c-e)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	model = "CRSF to FSDB01 board";
@@ -32,7 +33,31 @@
 		};
 	};
 
+	/* TODO: placeholder pin, FS-DB01 output not assigned yet */
+	fsdb01: fsdb01 {
+		compatible = "flysky,fsdb01";
+		out-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+	};
+
+	/* Input voltage dividers: 100k over 33k, ratio 33/133 = 0.248 */
+	vsense0: vsense0 {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 0>;
+		output-ohms = <33000>;
+		full-ohms = <(100000 + 33000)>;
+	};
+
+	vsense1: vsense1 {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 1>;
+		output-ohms = <33000>;
+		full-ohms = <(100000 + 33000)>;
+	};
+
 	aliases {
+		fsdb01 = &fsdb01;
+		vsense0 = &vsense0;
+		vsense1 = &vsense1;
 		led0 = &green_led;
 		led1 = &red_led;
 		crsf-uart = &usart1;
@@ -84,6 +109,34 @@ zephyr_udc0: &usb {
 	pinctrl-names = "default";
 	current-speed = <420000>;
 	status = "okay";
+};
+
+/* Voltage sense inputs: PA0 (IN0) and PA1 (IN1); ADC clock 64 MHz / 4 = 16 MHz */
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
+	pinctrl-names = "default";
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* Max sampling time (160.5 cycles, 10 us): the dividers' source impedance is ~25k */
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
 };
 
 &iwdg {

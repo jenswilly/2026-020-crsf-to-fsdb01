@@ -22,23 +22,81 @@ Custom board pins are **provisional** until the schematic is final.
 | Function            | `crsf_fsdb01`        | `nucleo_g0b1re`                      |
 |---------------------|----------------------|--------------------------------------|
 | CRSF UART (USART1)  | PB6 TX, PB7 RX       | PC4 TX (Arduino D1), PC5 RX (Arduino D0) |
-| USB D− / D+         | PA11 / PA12          | PA11 (CN10-14) / PA12 (CN10-12)      |
+| USB D−/D+           | PA11/PA12            | PA11 (CN10-14)/PA12 (CN10-12)      |
 | `led0`              | PB0 (green)          | PA5 (LD4, green)                     |
 | `led1`              | PB1 (red)            | –                                    |
-| FS-DB01 signal out  | TBD                  | TBD                                  |
+| `fsdb01` signal out | PA8 (placeholder)    | PA10 (Arduino D2, placeholder)       |
+| `vsense0` (ADC1 IN0)| PA0                  | PA0 (Arduino A0)                     |
+| `vsense1` (ADC1 IN1)| PA1                  | PA1 (Arduino A1)                     |
 | SWD                 | PA13 SWDIO, PA14 SWCLK | on-board ST-LINK                   |
 
 The CRSF link runs at 420000 baud, 8N1, full duplex.
 
-### Console / CLI
+The two voltage sense inputs each go through a 100k/33k divider (ratio 33/133 ≈ 0.248), so up to ~13.3 V at the input gives 3.3 V at the pin. Each divider is a `voltage-divider` node in devicetree (`output-ohms`, `full-ohms`), read by Zephyr's voltage-divider sensor driver, which returns the voltage before the divider. The ADC uses 12 bits, the longest sampling time (the divider's source impedance is ~25k) and VDDA as reference, assumed to be 3.3 V (`vref-mv` default).
+
+### Console/CLI
 
 The Zephyr console and shell use **USB CDC ACM** on the MCU's own USB pins on both boards. There is no UART console, except for the optional `nucleo-vcp` build below.
 
 On the Nucleo this needs an **external USB connector**, wired to PA12 (D+), PA11 (D−) and GND on the morpho header. Don't connect its VBUS while the board is also powered from the ST-LINK USB. The ST-LINK virtual COM port (USART2) is not used by default.
 
-For development without the extra connector, the `nucleo-vcp` preset adds `boards/nucleo_vcp_console.overlay`, which moves the console and shell to USART2, and `boards/nucleo_vcp.conf` for extra development Kconfig (e.g. `CONFIG_DEBUG_OPTIMIZATIONS`). Output then appears on the ST-LINK virtual COM port (usually `/dev/ttyACM0`) at 115200 baud. CDC ACM is still built in but isn't the console.
+For development without the extra connector, the `nucleo-vcp` preset (a debug build) adds `boards/nucleo_vcp_console.overlay`, which moves the console and shell to USART2. Output then appears on the ST-LINK virtual COM port (usually `/dev/ttyACM0`) at 115200 baud. CDC ACM is still built in but isn't the console.
 
 The device currently uses Zephyr's test USB VID/PID (`0x2fe3:0x0004`). Production needs its own.
+
+### Shell commands
+
+`leds` (in `src/shell_leds.cpp`) drives the FS-DB01 driver by hand, for testing the output before the CRSF mapping exists:
+
+| Command                       | Action                                                       |
+|-------------------------------|--------------------------------------------------------------|
+| `leds status`                 | Output enabled/disabled, raw frame (hex), each bit on/off    |
+| `leds on <led\|all\|0-7>`     | Set bit(s)                                                   |
+| `leds off <led\|all\|0-7>`    | Clear bit(s)                                                 |
+| `leds toggle <led\|all\|0-7>` | Toggle bit(s)                                                |
+| `leds enable`                 | Start sending frames                                         |
+| `leds disable`                | Stop sending and hold the line low (high with `invert`)      |
+
+LED names (Tab completes them): `right` (bit 0), `left` (1), `ill1` (2), `ill2` (3), `brake` (5), `nosig_fast` (6), `nosig_slow` (7). Use `4` for the unknown bit 4. `all` covers bits 0–7; bit 8 is always 0.
+
+`main()` disables the output at boot, so run `leds enable` before expecting anything on the wire. on/off/toggle only change the frame bits.
+
+`voltage` (in `src/shell_voltage.cpp`) reads both voltage sense inputs and prints the input voltage (before the divider) and the voltage at the pin:
+
+```
+> voltage
+vsense0  12.012 V   (pin 2.980 V)
+vsense1   0.004 V   (pin 0.000 V)
+```
+
+`dfu` (in `src/shell_dfu.cpp`) reboots into the USB DFU bootloader; see below.
+
+### Firmware update over USB (DFU)
+
+The `dfu` shell command reboots into the STM32's built-in system bootloader, which enumerates on USB as `0483:df11`. No BOOT0 pin or jumper is used; the option bytes stay at their factory defaults. Then flash with:
+
+```sh
+dfu-util -d 0483:df11 -a 0 -s 0x08000000:leave -D build_custom/zephyr/zephyr.bin
+```
+
+or use the wrapper, which checks the file and that the bootloader is present first:
+
+```sh
+scripts/dfu_flash.sh build_custom/zephyr/zephyr.bin
+```
+
+`-d 0483:df11` selects the STM32 bootloader, so other DFU-capable devices, such as some laptop webcams, are never targeted. If several boards are in DFU mode at once, add `-S <serial>` (shown by `dfu-util -l`), or set `DFU_SERIAL=<serial>` for the script (with sudo: `sudo DFU_SERIAL=… scripts/dfu_flash.sh …`). **After flashing, power-cycle the board fully.** While erasing, the bootloader sets the `EMPTY` flag in `FLASH_ACR`. While it's set, every reset starts the bootloader again instead of the new firmware, and only a real power-on clears it. `:leave` and the reset button don't, so the board stays in DFU mode. On the Nucleo, the ST-LINK USB also powers the board, so unplug that cable too. Without a power cycle, clear the flag over SWD instead:
+
+```sh
+openocd -f <board openocd.cfg> -c "init; halt; mmw 0x40022000 0 0x00010000; reset run; shutdown"
+```
+
+How it works (`src/bootloader.cpp`): the command stores a marker in `.noinit` RAM and reboots. Early in the next boot, before the clock driver runs, the marker is found and the firmware jumps to system memory (`0x1FFF0000`), so the bootloader starts from an almost-reset state.
+
+This only works while the firmware is running. To recover a board whose firmware doesn't boot, use SWD.
+
+The host needs permission to open `0483:df11`, e.g. a udev rule like the one for the ST-LINK:
+`SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="df11", MODE="0660", GROUP="plugdev"`.
 
 ## Protocols
 
@@ -47,13 +105,14 @@ The device currently uses Zephyr's test USB VID/PID (`0x2fe3:0x0004`). Productio
 - UART, **420000 baud, 8N1**, non-inverted, full duplex: receiver TX → MCU RX. MCU TX → receiver RX is only needed for telemetry.
 - Frame layout: `[sync 0xC8] [len] [type] [payload …] [CRC8]`. `len` counts type + payload + CRC. The CRC8 uses the DVB-S2 polynomial `0xD5` and covers type + payload.
 - `0x16` *RC channels packed*: 16 channels × 11 bits, little-endian bit-packed. Nominal values run 172–1811 (≈ 988–2012 µs), with 992 at center.
-- `0x14` *Link statistics*: RSSI, LQ, SNR, etc. Useful for failsafe / no-signal detection.
+- `0x14` *Link statistics*: RSSI, LQ, SNR, etc. Useful for failsafe/no-signal detection.
 
 ### Output: FS-DB01 LED module
 
 All of the following comes from the reverse-engineered reference implementation; it isn't an official specification.
 
 - A single GPIO line, idle **low**, driven from a 1 ms time base.
+  If the signal goes through an inverting level shifter, add the `invert` property to the `fsdb01` devicetree node. The driver then inverts every level it drives, including the disabled state.
 - A frame is **9 bits**, sent bit 0 first, followed by **3 ms low**. Each bit takes 3 ms, so a frame takes 30 ms and repeats continuously.
   - `1` = 2 ms high, then 1 ms low
   - `0` = 1 ms high, then 2 ms low
@@ -65,7 +124,7 @@ All of the following comes from the reverse-engineered reference implementation;
 | 2   | Illumination, step 1                             |
 | 3   | Illumination, step 2                             |
 | 4   | Unknown; probably unused                         |
-| 5   | Reverse / brake                                  |
+| 5   | Reverse/brake                                  |
 | 6   | No-signal fast blink (low priority)              |
 | 7   | No-signal slow blink (high priority)             |
 | 8   | Always 0                                         |
@@ -92,19 +151,25 @@ To change tool versions, edit `ZEPHYR_VERSION`, `CMAKE_VERSION` or `NINJA_VERSIO
 
 ## Building, flashing and debugging
 
-Builds are driven by **CMake presets** (`CMakePresets.json`), one per board:
+Builds are driven by **CMake presets** (`CMakePresets.json`), one per board and build mode:
 
-| Preset   | Board target                | Build directory |
-|----------|-----------------------------|-----------------|
-| `nucleo` | `nucleo_g0b1re/stm32g0b1xx` | `build_nucleo/` |
-| `nucleo-vcp` | `nucleo_g0b1re/stm32g0b1xx`, console on ST-LINK VCP | `build_nucleo-vcp/` |
-| `custom` | `crsf_fsdb01/stm32g0b1xx`   | `build_custom/` |
+| Preset         | Board target                | Mode    | Build directory        |
+|----------------|-----------------------------|---------|------------------------|
+| `nucleo`       | `nucleo_g0b1re/stm32g0b1xx` | release | `build_nucleo/`        |
+| `nucleo-debug` | `nucleo_g0b1re/stm32g0b1xx` | debug   | `build_nucleo-debug/`  |
+| `nucleo-vcp`   | `nucleo_g0b1re/stm32g0b1xx`, console on ST-LINK VCP | debug | `build_nucleo-vcp/` |
+| `custom`       | `crsf_fsdb01/stm32g0b1xx`   | release | `build_custom/`        |
+| `custom-debug` | `crsf_fsdb01/stm32g0b1xx`   | debug   | `build_custom-debug/`  |
+
+The build mode is the `APP_BUILD_MODE` cache variable, set by the hidden `debug`/`release` presets. `CMakeLists.txt` adds `debug.conf` or `release.conf` on top of `prj.conf` for every board, so mode-specific Kconfig goes there; `debug.conf` builds with `-O0` (`CONFIG_NO_OPTIMIZATIONS`), thread info, an MPU stack guard and extra shell commands. `-O0` rather than `-Og` because the Cortex-M0+ has only 4 hardware breakpoints, and at `-Og` one source line often compiles to several copies that each need one (OpenOCD: `Can not find free FPB Comparator`). A preset can still add board-specific fragments with `EXTRA_CONF_FILE`; they're merged after the mode file.
+
+To add a board: a hidden `<board>-board` preset with `BOARD`, plus `<board>` (inherits `release`) and `<board>-debug` (inherits `debug`) presets, and the matching build presets, tasks and launch configs.
 
 ### In VS Code
 
 - **Build:** choose the preset in the CMake Tools status bar, then click Build (F7). IntelliSense follows the active preset.
-- **Flash / menuconfig:** use the tasks in `.vscode/tasks.json` (*Tasks: Run Task* → `Flash: nucleo`, `Flash: nucleo-vcp`, `Flash: custom`, …).
-- **Debug:** use the Cortex-Debug launch configs in `.vscode/launch.json` (`Debug: nucleo`, `Debug: custom`, `Attach: custom`). They build first, then flash and debug via OpenOCD + ST-LINK.
+- **Flash/menuconfig:** use the tasks in `.vscode/tasks.json` (*Tasks: Run Task* → `Flash: nucleo`, `Flash: nucleo-debug`, `Flash: custom`, …).
+- **Debug:** use the Cortex-Debug launch configs in `.vscode/launch.json` (`Debug: nucleo-debug`, `Debug: nucleo-vcp`, `Debug: custom-debug`, `Attach: custom-debug`). They use the debug builds, build first, then flash and debug via OpenOCD + ST-LINK.
 
 ### From the command line
 
@@ -118,24 +183,31 @@ cmake --build --preset custom --target menuconfig # Kconfig
 cmake --build --preset custom --target ram_report # memory usage
 ```
 
-Replace `custom` with `nucleo` for the development board. For a clean rebuild, delete the build directory, or run `cmake --preset <name> --fresh`.
+Replace `custom` with another preset, e.g. `custom-debug` or `nucleo`. For a clean rebuild, delete the build directory, or run `cmake --preset <name> --fresh`.
 
-The `flash`, `debug` and `debugserver` targets call Zephyr's west runners internally. `west` still works on the same build directories, e.g. `west flash -d build_custom`, or `west flash -d build_custom -r <runner>` to pick another runner. The custom board also defines STM32CubeProgrammer, pyOCD and J-Link runners. Flashing and Cortex-Debug both use the OpenOCD and GDB from the Zephyr SDK.
+The `flash`, `debug` and `debugserver` targets call Zephyr's west runners internally. `west` still works on the same build directories, e.g. `west flash -d build_custom`, or `west flash -d build_custom -r <runner>` to pick another runner. Both boards also define STM32CubeProgrammer, pyOCD and J-Link runners, but only OpenOCD is installed in the container. The stock Nucleo board defaults to STM32CubeProgrammer, so the `nucleo` presets set `BOARD_FLASH_RUNNER=openocd`. Flashing and Cortex-Debug both use the OpenOCD and GDB from the Zephyr SDK.
 
 ## Project layout
 
 ```
 CMakeLists.txt                  App build; adds this repo as a BOARD_ROOT
-CMakePresets.json               Configure/build presets per board
+NOTES.md                        Handoff notes: status, decisions, open items
+CMakePresets.json               Configure/build presets per board and mode
+debug.conf, release.conf        Kconfig per build mode, added on top of prj.conf
 prj.conf                        Common Kconfig: C++23, full libstdc++, logging, shell, USB CDC ACM
-src/                            Application sources (C++)
+Kconfig                         App Kconfig root: sources drivers/Kconfig, then Zephyr
+src/                            Application sources (C++); shell commands in src/shell_*.cpp
+  bootloader.cpp                Reboot into the STM32 USB DFU bootloader (`dfu` command)
+drivers/                        In-tree device drivers (C)
+  fsdb01/                       FS-DB01 driver: source, header, Kconfig
+dts/bindings/                   Devicetree bindings for the in-tree drivers (flysky,fsdb01)
 boards/
   usb_console.dtsi              CDC ACM console/shell node, shared by both boards
   nucleo_g0b1re.overlay         Nucleo: crsf-uart alias, USB console, frees PA11/PA12
   nucleo_vcp_console.overlay    Nucleo dev option (nucleo-vcp preset): console on ST-LINK VCP
-  nucleo_vcp.conf               Extra Kconfig for the nucleo-vcp preset (debug settings)
   crsf_fsdb01.overlay           Custom board: USB console
   custom/crsf_fsdb01/           Custom board definition (Zephyr hardware model v2)
+scripts/dfu_flash.sh            Flash a .bin over USB DFU (STM32 system bootloader)
 .vscode/                        Tasks (build/flash/menuconfig) and Cortex-Debug launch configs
 .devcontainer/                  Dockerfile + devcontainer.json
 ```

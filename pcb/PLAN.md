@@ -65,7 +65,7 @@ that a schematic builder would otherwise have to guess. Plan: close these in INS
    - Fix typo "is both" → "if both".
 2. Follow-up for after the schematic (record in NOTES.md, don't do it now): DTS LEDs to
    GPIO_ACTIVE_LOW, relabel blue/red-orange, finalize the FS-DB01 pin in README and custom board DTS.
-   Add the ADC (PA0 VIN_SENSE, PA1 VBUS_SENSE, ratio 0.248) to the custom board DTS and README.
+   Verify ADC pins are added correctly to both boards and that ratio is set correctly.
 3. Then build the schematic via Konnect / kicad-schematic-build-agent, when the user asks.
 3. Then (separate step, user-triggered) build the schematic via Konnect / kicad-schematic-build-agent.
 

@@ -15,14 +15,15 @@ is no need for hierarchical organization.
 
 ### Components
 
-| Component        | Part          | Notes                                                    |
-|------------------|---------------|----------------------------------------------------------|
-| MCU              | STM32G0B1CET6 | No crystal                                               |
-| Bi-color LED     | 599-0090-222F | Active low, direct sink from MCU GPIO pin (20 mA max)    |
-| Input connector  | ?             | 3 x 0.1" pin headers near edge of board to allow RA pins |
-| Output connector | ?             | 3 x 0.1" pin headers near edge of board to allow RA pins |
-| LDO              | NCP551SN33T1G | 3.3 V LDO                                                |
-| Passives         | (generic)     | Bypass capacitors and resistors                          |
+| Component        | Part                      | Notes                                                                 |
+|------------------|---------------------------|-----------------------------------------------------------------------|
+| MCU              | STM32G0B1CET6             | No crystal                                                            |
+| LED1             | KP-1608QBC-D              | Active low, direct sink from MCU GPIO pin (20 mA max), 0603, Vf=3.2 V |
+| LED2             | ASMT-RF45-AN002           | Active low, direct sink from MCU GPIO pin (20 mA max), 0603, Vf=2.0 V |
+| Input connector  | footprint for hand-solder | 3 x 0.1" pin headers near edge of board to allow RA pins              |
+| Output connector | footprint for hand-solder | 3 x 0.1" pin headers near edge of board to allow RA pins              |
+| LDO              | NCP551SN33T1G             | 3.3 V LDO                                                             |
+| Passives         | (generic)                 | Bypass capacitors and resistors                                       |
 
 
 ### High-level Design
@@ -37,7 +38,7 @@ is no need for hierarchical organization.
    VBUS is _not_ connected to output connector's Vin pin. Make sure LDO is protected is both VBUS and Vin are 
    connected.
 8. Add bypass capacitors and other passives (e.g. for LDO) as recommended
-9. LEDs should be limited to 15 mA current. Forward voltages are 1.8 and 2.8 V for yellow and blue, respectively
+9. LEDs should be limited to 15 mA current. Forward voltages are 3.2 V (LED1) and 2.0 V (LED2)
 
 
 -----

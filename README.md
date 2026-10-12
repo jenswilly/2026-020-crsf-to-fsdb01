@@ -26,9 +26,13 @@ Custom board pins are **provisional** until the schematic is final.
 | `led0`              | PB0 (green)          | PA5 (LD4, green)                     |
 | `led1`              | PB1 (red)            | –                                    |
 | `fsdb01` signal out | PA8 (placeholder)    | PA10 (Arduino D2, placeholder)       |
+| `vsense0` (ADC1 IN0)| PA0                  | PA0 (Arduino A0)                     |
+| `vsense1` (ADC1 IN1)| PA1                  | PA1 (Arduino A1)                     |
 | SWD                 | PA13 SWDIO, PA14 SWCLK | on-board ST-LINK                   |
 
 The CRSF link runs at 420000 baud, 8N1, full duplex.
+
+The two voltage sense inputs each go through a 100k/33k divider (ratio 33/133 ≈ 0.248), so up to ~13.3 V at the input gives 3.3 V at the pin. Each divider is a `voltage-divider` node in devicetree (`output-ohms`, `full-ohms`), read by Zephyr's voltage-divider sensor driver, which returns the voltage before the divider. The ADC uses 12 bits, the longest sampling time (the divider's source impedance is ~25k) and VDDA as reference, assumed to be 3.3 V (`vref-mv` default).
 
 ### Console/CLI
 
@@ -56,6 +60,14 @@ The device currently uses Zephyr's test USB VID/PID (`0x2fe3:0x0004`). Productio
 LED names (Tab completes them): `right` (bit 0), `left` (1), `ill1` (2), `ill2` (3), `brake` (5), `nosig_fast` (6), `nosig_slow` (7). Use `4` for the unknown bit 4. `all` covers bits 0–7; bit 8 is always 0.
 
 `main()` disables the output at boot, so run `leds enable` before expecting anything on the wire. on/off/toggle only change the frame bits.
+
+`voltage` (in `src/shell_voltage.cpp`) reads both voltage sense inputs and prints the input voltage (before the divider) and the voltage at the pin:
+
+```
+> voltage
+vsense0  12.012 V   (pin 2.980 V)
+vsense1   0.004 V   (pin 0.000 V)
+```
 
 `dfu` (in `src/shell_dfu.cpp`) reboots into the USB DFU bootloader; see below.
 

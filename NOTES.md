@@ -2,7 +2,7 @@
 
 Working notes for picking up development, on any machine or in a new Claude Code session. `README.md` covers the hardware, pins, protocol and build; this file covers where things stand and why. Update it when an item is settled.
 
-Last updated: 2026-10-11.
+Last updated: 2026-10-12.
 
 ## Status
 
@@ -10,7 +10,7 @@ Last updated: 2026-10-11.
 - **Debugging works on the Nucleo** (`Debug: nucleo-debug` in VS Code): the debug build reaches `main()`, stops at breakpoints and runs without faults, and USB enumerates.
 - **FS-DB01 driver** (`drivers/fsdb01/`) is functional but **its output is not yet verified on hardware**. Check with a logic analyser on the Nucleo's PA10 (Arduino D2). With the no-signal frame (bits 6 and 7), each 30 ms frame should be six short pulses (1 ms high / 2 ms low), two long ones (2 ms / 1 ms), one short, then 3 ms low.
 - **`main()`** checks devices, **disables FS-DB01 output at boot**, and blinks `led0`. Run `leds enable` to start output.
-- **Shell** (`src/shell_*.cpp`): `leds` drives the driver by hand, `dfu` reboots into the USB DFU bootloader; see README.
+- **Shell** (`src/shell_*.cpp`): `leds` drives the driver by hand, `voltage` reads the two voltage sense inputs, `dfu` reboots into the USB DFU bootloader; see README.
   - Release builds (`prj.conf`) turn off `kernel`, `device`, `devmem`, `date`, `retval` and the VT100 commands (`clear`); prompt `> `.
   - Debug builds (`debug.conf`) turn `kernel`, `device`, `devmem` and VT100 back on; prompt `DBG > `.
 - **Logging** goes through the shell's log backend (`CONFIG_SHELL_LOG_BACKEND`, no UART log backend), so it always appears where the shell is: CDC ACM, or USART2 in `nucleo-vcp`. `printk()` goes into the log too.
@@ -28,6 +28,12 @@ Last updated: 2026-10-11.
 - **Bit timing:** one-shot `k_timer` re-armed at each edge (ISR context), scheduled with **absolute** deadlines (`K_TIMEOUT_ABS_TICKS`). Relative re-arms add 1 tick per edge in Zephyr 4.4 (`kernel/timeout.c`, `timeout.ticks + 1`), which would stretch bits to ~3.2 ms. The Kconfig selects `TIMEOUT_64BIT` for this. Tick rate is 10 kHz.
   - Fallback if timing proves too loose: a hardware timer in PWM mode (3 ms period, 1 or 2 ms pulse).
 - **`invert` DT property** inverts every level (frames, gap, disabled state, level at boot) for an inverting level shifter. Don't combine it with `GPIO_ACTIVE_LOW` in `out-gpios`; the two cancel out.
+
+### Voltage sensing
+
+- **PA0/PA1 (ADC1 IN0/IN1) on both boards**, behind 100k/33k dividers. Described in devicetree as `voltage-divider` nodes (aliases `vsense0`, `vsense1`) and read through Zephyr's voltage-divider sensor driver, so the divider ratio lives in DT rather than in code. Needs `CONFIG_ADC` and `CONFIG_SENSOR`.
+- With `CONFIG_SENSOR` on, the stock Nucleo board's `die_temp` and `vref` sensors (ADC1 channels 12/13) are built in too. Harmless; disable them in the overlay if the space matters.
+- Accuracy depends on VDDA being 3.3 V. If that's not good enough, measure VREFINT and correct for it. **Not verified on hardware yet.**
 
 ### Build presets and modes
 

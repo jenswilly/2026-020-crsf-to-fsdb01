@@ -22,6 +22,7 @@ target_sources(app PRIVATE
     src/bootloader.cpp
     src/shell_dfu.cpp
     src/shell_leds.cpp
+    src/shell_voltage.cpp
 )
 
 # In-tree drivers; bindings are in dts/bindings, Kconfig in drivers/

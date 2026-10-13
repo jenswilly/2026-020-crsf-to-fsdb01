@@ -57,6 +57,9 @@ that a schematic builder would otherwise have to guess. Plan: close these in INS
 ## Plan
 
 1. Verify if footprint/symbol exists for Molex PicoBlade 53261-0571
+    - Done: footprint `Connector_Molex:Molex_PicoBlade_53261-0571_1x05-1MP_P1.25mm_Horizontal`
+      (KiCad stock, pads 1–5 + 2 × MP), symbol `Connector_Generic_MountingPin:Conn_01x05_MountingPin`.
+      Recorded in INSTRUCTIONS.md.
 2. Edit `pcb/INSTRUCTIONS.md` only (no KiCad files):
     - Components table: add Schottky ×2, USBLC6-2SC6,
       53261-0571 Molex PicoBlade SWD connector, USB-C receptacle (USB 2.0 16P), and the LED resistor values.
@@ -69,10 +72,14 @@ that a schematic builder would otherwise have to guess. Plan: close these in INS
     - Note that NCP551 needs a project-local symbol (pinout above, footprint SOT-23-5).
     - Vin/VBUS sense dividers: components table, pin table (PA0/PA1) and design item 10.
     - Fix typo "is both" → "if both".
-3. Follow-up for after the schematic (record in NOTES.md, don't do it now): DTS LEDs to
+3. Follow-up for after the schematic (recorded in NOTES.md, don't do it now): DTS LEDs to
    GPIO_ACTIVE_LOW, relabel blue/red-orange, finalize the FS-DB01 pin in README and custom board DTS.
    Verify ADC pins are added correctly to both boards and that ratio is set correctly.
 4. Then build the schematic via Konnect / kicad-schematic-build-agent, when the user asks.
+    - Done 2026-10-13 (built in the main session through Konnect; the build agent can't call
+      Konnect's dynamically loaded tools). ERC 0 errors / 0 warnings. USB-C footprint
+      `Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12`; NCP551 symbol in the project library
+      `crsf_fsdb01.kicad_sym`. NRST is pin 10 (labelled PF2 in the KiCad symbol).
 
 ## Verification
 

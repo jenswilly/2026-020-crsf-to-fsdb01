@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+
+  (lib (name "crsf_fsdb01") (type "KiCad") (uri "${KIPRJMOD}/crsf_fsdb01.kicad_sym") (options "") (descr "")))

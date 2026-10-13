@@ -23,7 +23,7 @@ is no need for hierarchical organization.
 | Output connector | footprint for hand-solder             | 3 x 0.1" pin header near edge of board to allow RA pins                   |
 | USB connector    | USB-C receptacle, USB 2.0             | Symbol `Connector:USB_C_Receptacle_USB2.0_16P`                            |
 | USB ESD          | USBLC6-2SC6                           | ESD protection on D+/D−. Symbol `Power_Protection:USBLC6-2SC6`            |
-| SWD connector    | Molex PicoBlade, 5 pin, 53261-0571    | Side entry, 1.25 mm                                                       |
+| SWD connector    | Molex PicoBlade, 5 pin, 53261-0571    | Side entry, 1.25 mm. Symbol `Connector_Generic_MountingPin:Conn_01x05_MountingPin`, footprint `Connector_Molex:Molex_PicoBlade_53261-0571_1x05-1MP_P1.25mm_Horizontal`. MP pads are mechanical only: no-connect |
 | LDO              | NCP551SN33T1G                         | 3.3 V, 150 mA, TSOP-5/SOT-23-5. Needs a project-local symbol (see below)  |
 | D1, D2           | Schottky diode, ≥ 0.5 A (e.g. B5819W) | Power ORing of Vin and VBUS into the LDO, SOD-123 or smaller              |
 | Voltage sense    | 100 kΩ + 33 kΩ dividers, 100 nF       | One divider each for Vin and VBUS, into MCU ADC pins (see design item 10) |
@@ -46,8 +46,8 @@ If a pin changes here, the firmware and README must be updated too.
 | NRST | Reset                         | To SWD connector, 100 nF to GND                                |
 | PB0  | LED1 (blue), active low       | Via series resistor                                            |
 | PB1  | LED2 (red-orange), active low | Via series resistor                                            |
-| PA0  | VIN_SENSE (ADC1_IN0)          | Vin voltage divider tap. Not in firmware yet                   |
-| PA1  | VBUS_SENSE (ADC1_IN1)         | VBUS voltage divider tap. Not in firmware yet                  |
+| PA0  | VIN_SENSE (ADC1_IN0)          | Vin voltage divider tap (`vsense0`)                            |
+| PA1  | VBUS_SENSE (ADC1_IN1)         | VBUS voltage divider tap (`vsense1`)                           |
 
 ### Connector Pinouts
 
@@ -132,4 +132,4 @@ library tools, not by hand-editing files) with footprint `Package_TO_SOT_SMD:SOT
 
 ## PCB Layout
 
-Information to come...
+Before continuing with layout instructions, user must verify capacitor footprints and voltages.

@@ -132,4 +132,4 @@ library tools, not by hand-editing files) with footprint `Package_TO_SOT_SMD:SOT
 
 ## PCB Layout
 
-Before continuing with layout instructions, user must verify capacitor footprints and voltages.
+To be specified later...

@@ -1,6 +1,7 @@
 # Review of pcb/INSTRUCTIONS.md before schematic capture
 
 ## Context
+
 The user asked whether `pcb/INSTRUCTIONS.md` is good enough to start the KiCad schematic
 (`pcb/2026-020-crft-to-fsdb01/`, KiCad 10, currently an empty A4 sheet). Checked via Konnect
 (project info, symbol library search) and the datasheets in `pcb/Datasheets/`.
@@ -11,11 +12,13 @@ that a schematic builder would otherwise have to guess. Plan: close these in INS
 ## Findings
 
 ### Blocking
+
 1. **LED1 (KP-1608QBC-D, blue) can't be driven at 15 mA from 3.3 V.** Datasheet: Vf 3.3 V typ /
    4.0 V max @ 20 mA (not 3.2 V). With a 3.3 V rail and a sinking GPIO (VOL ~0.4 V+), headroom is
    negative → LED will be dim/off and current uncontrolled. Needs a decision (see questions).
 
 ### Gaps (recommended defaults in brackets)
+
 2. **Pin assignments not stated.** Firmware already uses PB6/PB7 USART1 (CRSF), PA11/PA12 USB,
    PA13/PA14 SWD, PB0/PB1 LEDs, PA8 FS-DB01 (placeholder). [Use these; state them in the doc.]
    CRSF input is RX-only with a 3-pin connector → MCU TX (PB6) unused/no telemetry. [Note it.]
@@ -36,6 +39,7 @@ that a schematic builder would otherwise have to guess. Plan: close these in INS
 8. Typo: "LDO is protected is both" → "if both". Fix.
 
 ## User decisions
+
 - **Blue LED:** keep it, accept low current. Direct sink from 3.3 V with a 10 Ω series resistor,
   which keeps the current ≤ ~15 mA even at the lowest Vf. This is acceptable.
   LED2 (red-orange, Vf 2.0 V): (3.3 − 2.0) / 15 mA ≈ 87 Ω → 91 Ω.
@@ -43,31 +47,40 @@ that a schematic builder would otherwise have to guess. Plan: close these in INS
   connector's V+ comes **directly from input-connector Vin**, ahead of the diode, with no drop.
   It is unpowered when running from USB only, which is intentional.
 - **Connectors:** servo standard pin order: 1 Signal, 2 V+ (middle), 3 GND, on both.
-- **Extras:** add USB ESD protection (USBLC6-2SC6) and a JST XH 5-pin SWD connector,
-  S5B-XH-A (LF)(SN) (side entry). Proposed pinout: 1 3V3, 2 SWDIO, 3 SWCLK, 4 NRST, 5 GND.
+- **Extras:** add USB ESD protection (USBLC6-2SC6) and a Molex PicoBlade 5-pin SWD connector,
+  53261-0571 (side entry). Proposed pinout: 1 3V3, 2 SWDIO, 3 SWCLK, 4 NRST, 5 GND.
   No series resistors on signals, no power LED.
 - **Voltage sensing:** measure raw Vin and VBUS (before the ORing diodes) on ADC pins through
   100 kΩ / 33 kΩ dividers (ratio 0.248, full scale ≈ 13.3 V), 100 nF at each ADC pin, 1 %
   resistors. Vin → PA0 (ADC1_IN0), VBUS → PA1 (ADC1_IN1).
 
 ## Plan
-1. Edit `pcb/INSTRUCTIONS.md` only (no KiCad files):
-   - Components table: add Schottky ×2, USBLC6-2SC6,
-     S5B-XH-A SWD connector, USB-C receptacle (USB 2.0 16P), and the LED resistor values.
-   - New "MCU pin assignments" table (PB7 CRSF RX, PB6 unused, PA11/PA12 USB, PA13/PA14 SWD,
-     NRST, PB0 LED1, PB1 LED2, PA8 FS-DB01 out), matching README/DTS.
-   - High-level design: rewrite item 7 with the diode-OR, item 2 with the Vin passthrough,
-     connector pin orders, max Vin ≤ 12 V (NCP551 abs max), USB-C CC 5.1 kΩ pull-downs,
-     NRST 100 nF, decoupling for each VDD pin plus VDDA/VREF+/VBAT, Vin bulk cap, LDO 1 µF in/out,
-     EN tied to VIN.
-   - Note that NCP551 needs a project-local symbol (pinout above, footprint SOT-23-5).
-   - Vin/VBUS sense dividers: components table, pin table (PA0/PA1) and design item 10.
-   - Fix typo "is both" → "if both".
-2. Follow-up for after the schematic (record in NOTES.md, don't do it now): DTS LEDs to
+
+1. Verify if footprint/symbol exists for Molex PicoBlade 53261-0571
+    - Done: footprint `Connector_Molex:Molex_PicoBlade_53261-0571_1x05-1MP_P1.25mm_Horizontal`
+      (KiCad stock, pads 1–5 + 2 × MP), symbol `Connector_Generic_MountingPin:Conn_01x05_MountingPin`.
+      Recorded in INSTRUCTIONS.md.
+2. Edit `pcb/INSTRUCTIONS.md` only (no KiCad files):
+    - Components table: add Schottky ×2, USBLC6-2SC6,
+      53261-0571 Molex PicoBlade SWD connector, USB-C receptacle (USB 2.0 16P), and the LED resistor values.
+    - New "MCU pin assignments" table (PB7 CRSF RX, PB6 unused, PA11/PA12 USB, PA13/PA14 SWD,
+      NRST, PB0 LED1, PB1 LED2, PA8 FS-DB01 out), matching README/DTS.
+    - High-level design: rewrite item 7 with the diode-OR, item 2 with the Vin passthrough,
+      connector pin orders, max Vin ≤ 12 V (NCP551 abs max), USB-C CC 5.1 kΩ pull-downs,
+      NRST 100 nF, decoupling for each VDD pin plus VDDA/VREF+/VBAT, Vin bulk cap, LDO 1 µF in/out,
+      EN tied to VIN.
+    - Note that NCP551 needs a project-local symbol (pinout above, footprint SOT-23-5).
+    - Vin/VBUS sense dividers: components table, pin table (PA0/PA1) and design item 10.
+    - Fix typo "is both" → "if both".
+3. Follow-up for after the schematic (recorded in NOTES.md, don't do it now): DTS LEDs to
    GPIO_ACTIVE_LOW, relabel blue/red-orange, finalize the FS-DB01 pin in README and custom board DTS.
    Verify ADC pins are added correctly to both boards and that ratio is set correctly.
-3. Then build the schematic via Konnect / kicad-schematic-build-agent, when the user asks.
-3. Then (separate step, user-triggered) build the schematic via Konnect / kicad-schematic-build-agent.
+4. Then build the schematic via Konnect / kicad-schematic-build-agent, when the user asks.
+    - Done 2026-10-13 (built in the main session through Konnect; the build agent can't call
+      Konnect's dynamically loaded tools). ERC 0 errors / 0 warnings. USB-C footprint
+      `Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12`; NCP551 symbol in the project library
+      `crsf_fsdb01.kicad_sym`. NRST is pin 10 (labelled PF2 in the KiCad symbol).
 
 ## Verification
+
 Re-read INSTRUCTIONS.md for every item above; no `.kicad_*` files touched.

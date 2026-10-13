@@ -6,4 +6,5 @@ build*/
 *-backups/
 _autosave-*
 fp-info-cache
+.history/
 \#auto_saved_files#

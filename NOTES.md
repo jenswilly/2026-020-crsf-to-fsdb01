@@ -2,7 +2,7 @@
 
 Working notes for picking up development, on any machine or in a new Claude Code session. `README.md` covers the hardware, pins, protocol and build; this file covers where things stand and why. Update it when an item is settled.
 
-Last updated: 2026-10-12.
+Last updated: 2026-10-13.
 
 ## Status
 
@@ -64,6 +64,10 @@ Last updated: 2026-10-12.
 - **Hardware verification:** FS-DB01 output timing (see Status), and the full `dfu` → `dfu-util` flow with the MPU fix.
 - **`release.conf`** is empty. Release-only Kconfig currently lives in `prj.conf` and is undone in `debug.conf`.
 - **USB VID/PID** is still Zephyr's test ID.
+- **PCB:** the schematic (`pcb/2026-020-crft-to-fsdb01/`) is being built from `pcb/INSTRUCTIONS.md` (see `pcb/PLAN.md`). When it's done, bring the firmware in line with it:
+  - Custom board LEDs (PB0/PB1) are active low: switch the DTS to `GPIO_ACTIVE_LOW`, and relabel them blue (`led0`, PB0) and red-orange (`led1`, PB1) in the DTS and README.
+  - Finalize the FS-DB01 output pin (PA8) in the custom board DTS and README.
+  - Check the `vsense0`/`vsense1` divider ratio (100k/33k) and ADC pins (PA0/PA1) against the schematic, on both boards.
 
 ## Environment notes
 

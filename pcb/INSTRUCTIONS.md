@@ -21,11 +21,11 @@ is no need for hierarchical organization.
 | LED2             | ASMT-RF45-AN002 (red-orange)          | Active low, direct sink from MCU GPIO, 0603. Vf = 2.0 V                   |
 | Input connector  | footprint for hand-solder             | 3 x 0.1" pin header near edge of board to allow RA pins                   |
 | Output connector | footprint for hand-solder             | 3 x 0.1" pin header near edge of board to allow RA pins                   |
-| USB connector    | USB-C receptacle, USB 2.0             | Symbol `Connector:USB_C_Receptacle_USB2.0_16P`                            |
+| USB connector    | GCT USB4105-GF-A-120                  | USB-C 2.0 receptacle, top mount, 1.20 mm shell stakes for the 1.6 mm board. Symbol `Connector:USB_C_Receptacle_USB2.0_16P`, footprint `Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal` |
 | USB ESD          | USBLC6-2SC6                           | ESD protection on D+/D−. Symbol `Power_Protection:USBLC6-2SC6`            |
 | SWD connector    | Molex PicoBlade, 5 pin, 53261-0571    | Side entry, 1.25 mm. Symbol `Connector_Generic_MountingPin:Conn_01x05_MountingPin`, footprint `Connector_Molex:Molex_PicoBlade_53261-0571_1x05-1MP_P1.25mm_Horizontal`. MP pads are mechanical only: no-connect |
 | LDO              | NCP551SN33T1G                         | 3.3 V, 150 mA, TSOP-5/SOT-23-5. Needs a project-local symbol (see below)  |
-| D1, D2           | Schottky diode, ≥ 0.5 A (e.g. B5819W) | Power ORing of Vin and VBUS into the LDO, SOD-123 or smaller              |
+| D1               | BAT54CW                               | Dual Schottky, common cathode, SOT-323. Power ORing of Vin and VBUS into the LDO. Symbol `Diode:BAT54CW` |
 | Voltage sense    | 100 kΩ + 33 kΩ dividers, 100 nF       | One divider each for Vin and VBUS, into MCU ADC pins (see design item 10) |
 | Passives         | (generic)                             | Bypass capacitors and resistors                                           |
 
@@ -77,9 +77,11 @@ SWD connector (Molex PicoBlade 53261-0571):
 2. Output connector has FS-DB01 signal, Vin and GND. Its Vin pin is connected **directly** to the
    input connector's Vin, before the ORing diode, so there's no voltage drop. When the board is
    powered from USB only, the output connector's Vin is unpowered. This is intentional.
-3. Vin and USB VBUS are ORed into the LDO input through one Schottky diode each (D1 from Vin, D2
-   from VBUS, cathodes joined at the LDO input). This keeps VBUS and Vin from back-feeding each
-   other when both are connected, and protects against a reversed Vin.
+3. Vin and USB VBUS are ORed into the LDO input through the two halves of D1, a common-cathode
+   dual Schottky (BAT54CW: Vin on A2, VBUS on A1, common cathode to the LDO input). 200 mA rating,
+   well above the LDO's 150 mA maximum; ~0.2 V more drop than the B5819W, which the LDO tolerates.
+   This keeps VBUS and Vin from back-feeding each other when both are connected, and protects
+   against a reversed Vin.
 4. LDO (NCP551) generates 3.3 V for the MCU:
     - 1 µF ceramic on the input and 1 µF ceramic on the output (per datasheet)
     - EN tied to VIN (always on), pin 4 (NC) left unconnected

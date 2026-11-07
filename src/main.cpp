@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include "crsf.h"
 #include "fsdb01.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
@@ -25,8 +26,8 @@ int main() {
         return 0;
     }
 
-    if (!device_is_ready(crsf_uart)) {
-        LOG_ERR("CRSF UART %s not ready", crsf_uart->name);
+    if (int ret = crsf::start(crsf_uart); ret < 0) {
+        LOG_ERR("CRSF on %s failed to start (%d)", crsf_uart->name, ret);
         return 0;
     }
 

@@ -69,6 +69,15 @@ vsense0  12.012 V   (pin 2.980 V)
 vsense1   0.004 V   (pin 0.000 V)
 ```
 
+`crsf` (in `src/shell_crsf.cpp`) shows what is arriving on the CRSF input:
+
+| Command         | Action                                                                     |
+|-----------------|----------------------------------------------------------------------------|
+| `crsf status`   | Age of the latest RC and link frames, byte/frame/error counters, link statistics |
+| `crsf channels` | The 16 channels from the latest RC frame, raw and in µs                    |
+
+If `Bytes` goes up but there are no frames, check the baud rate and that the signal isn't inverted. CRC errors point to noise or a bad connection.
+
 `dfu` (in `src/shell_dfu.cpp`) reboots into the USB DFU bootloader; see below.
 
 ### Firmware update over USB (DFU)
@@ -106,6 +115,7 @@ The host needs permission to open `0483:df11`, e.g. a udev rule like the one for
 - Frame layout: `[sync 0xC8] [len] [type] [payload …] [CRC8]`. `len` counts type + payload + CRC. The CRC8 uses the DVB-S2 polynomial `0xD5` and covers type + payload.
 - `0x16` *RC channels packed*: 16 channels × 11 bits, little-endian bit-packed. Nominal values run 172–1811 (≈ 988–2012 µs), with 992 at center.
 - `0x14` *Link statistics*: RSSI, LQ, SNR, etc. Useful for failsafe/no-signal detection.
+- The firmware parses frames in the UART RX interrupt (`src/crsf.cpp`) and keeps only the latest channels and link statistics, with the time each arrived. The protocol code (`src/crsf_parser.cpp`) has no Zephyr dependencies. It drops a partial frame after 1750 µs, as Betaflight does, and then resyncs on the next `0xC8`. Other frame types are counted and ignored.
 
 ### Output: FS-DB01 LED module
 
@@ -119,14 +129,14 @@ All of the following comes from the reverse-engineered reference implementation;
 
 | Bit | Function                                         |
 |-----|--------------------------------------------------|
-| 0   | Right turn signal                                |
-| 1   | Left turn signal                                 |
-| 2   | Illumination, step 1                             |
-| 3   | Illumination, step 2                             |
-| 4   | Unknown; probably unused                         |
-| 5   | Reverse/brake                                  |
-| 6   | No-signal fast blink (low priority)              |
-| 7   | No-signal slow blink (high priority)             |
+| 0   | Left turn signal (flashing)                      |
+| 1   | Right turn signal (flashing)                     |
+| 2   | Not connected                                    |
+| 3   | Front and top lights                             |
+| 4   | Brake                                            |
+| 5   | Not connected                                    |
+| 6   | No-signal fast blink (lower prio. than 7)        |
+| 7   | No-signal slow blink (higher prio. than 6)       |
 | 8   | Always 0                                         |
 
 The reference firmware's power-on state is bits 6 and 7 set: the no-signal indication.
@@ -198,6 +208,8 @@ prj.conf                        Common Kconfig: C++23, full libstdc++, logging, 
 Kconfig                         App Kconfig root: sources drivers/Kconfig, then Zephyr
 src/                            Application sources (C++); shell commands in src/shell_*.cpp
   bootloader.cpp                Reboot into the STM32 USB DFU bootloader (`dfu` command)
+  crsf.cpp                      CRSF receiver: UART ISR, latest channels/link statistics
+  crsf_parser.cpp               CRSF frame parser, CRC, channel decoding (no Zephyr dependencies)
 drivers/                        In-tree device drivers (C)
   fsdb01/                       FS-DB01 driver: source, header, Kconfig
 dts/bindings/                   Devicetree bindings for the in-tree drivers (flysky,fsdb01)

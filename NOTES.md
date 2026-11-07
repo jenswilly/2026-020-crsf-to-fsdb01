@@ -6,7 +6,7 @@ Last updated: 2026-11-07.
 
 ## Status
 
-- **Builds:** all five presets (`nucleo`, `nucleo-debug`, `nucleo-vcp`, `custom`, `custom-debug`) build with zero warnings. Release builds use ~80 KB flash, debug builds ~250 KB flash and ~31 KB RAM.
+- **Builds:** all five presets (`nucleo`, `nucleo-debug`, `nucleo-vcp`, `custom`, `custom-debug`) build with zero warnings. Release builds use ~90 KB flash, debug builds ~275 KB flash and ~32 KB RAM.
 - **Debugging works on the Nucleo** (`Debug: nucleo-debug` in VS Code): the debug build reaches `main()`, stops at breakpoints and runs without faults, and USB enumerates.
 - **FS-DB01 driver** (`drivers/fsdb01/`) is functional but **its output is not yet verified on hardware**. Check with a logic analyser on the Nucleo's PA10 (Arduino D2). With the no-signal frame (bits 6 and 7), each 30 ms frame should be six short pulses (1 ms high / 2 ms low), two long ones (2 ms / 1 ms), one short, then 3 ms low.
 - **`main()`** checks devices, **disables FS-DB01 output at boot**, and blinks `led0`. Run `leds enable` to start output.
@@ -15,7 +15,7 @@ Last updated: 2026-11-07.
   - Debug builds (`debug.conf`) turn `kernel`, `device`, `devmem` and VT100 back on; prompt `DBG > `.
 - **Logging** goes through the shell's log backend (`CONFIG_SHELL_LOG_BACKEND`, no UART log backend), so it always appears where the shell is: CDC ACM, or USART2 in `nucleo-vcp`. `printk()` goes into the log too.
 - **DFU flashing works on hardware**, apart from the `EMPTY` gotcha (see below). The MPU fix in the `dfu` jump is in place, but the full `dfu` → `dfu-util` flow hasn't been re-run since.
-- **CRSF:** UART is set up (alias `crsf-uart`, 420000 baud), but nothing reads or parses it yet.
+- **CRSF parser** (`src/crsf*.cpp`) is done but **not tested with a receiver yet**. `main()` starts it. `crsf status` and `crsf channels` show what it gets. The parser logic passed a host-side test: the CRC-8/DVB-S2 check value, a channel pack/unpack round trip, resync after garbage and bad lengths, CRC errors, timeouts across timer wraparound, and link statistics. That test isn't in the repo.
 
 ## Decisions and why
 
@@ -34,6 +34,16 @@ Last updated: 2026-11-07.
 - **Custom board DTS matches schematic rev. 1** (checked pin by pin through Konnect on 2026-11-07): PB7 CRSF RX, PA8 FS-DB01 out, PB0 blue LED (`led0`), PB1 red-orange LED (`led1`), PA0 Vin sense, PA1 VBUS sense, PA11/PA12 USB, PA13/PA14 SWD.
   - The LEDs are wired anode to 3V3, cathode to the GPIO, so they're `GPIO_ACTIVE_LOW`.
   - PB6 (USART1 TX) isn't connected on the board, so the custom board can't send CRSF telemetry. The DTS still muxes it as TX; that's harmless.
+
+### CRSF input
+
+- **Parsing happens in the UART RX ISR** (`CONFIG_UART_INTERRUPT_DRIVEN`), with no ring buffer or thread. Only the latest values matter, as with the FS-DB01 frame. Each byte costs a table CRC lookup, and decoding a whole frame takes a few µs.
+  - The latest `crsf::Status` (channels, link statistics, the `k_uptime_ticks()` of each, counters) sits behind a spinlock. `crsf::get_status()` returns a copy and can be called from any context. Failsafe can be built on the timestamps.
+  - Nothing notifies a consumer when a frame arrives. When the control thread exists, it can poll, or a semaphore or `k_event` can be added.
+- **Split in two:** `crsf_parser.{h,cpp}` is pure C++ (bytes in, CRC-checked frames out, decoders), so it can be tested on the host. `crsf.{h,cpp}` is the Zephyr UART part.
+- **Resync:** the parser waits for `0xC8`, rejects lengths outside 2–62, and drops a partial frame if it takes longer than 1750 µs from its sync byte (Betaflight's `CRSF_TIME_NEEDED_PER_FRAME_US`), timed with `k_cycle_get_32()`. Only `0xC8` is accepted as a sync byte.
+- **UART errors:** `uart_err_check()` is called before reading, because the STM32 driver's `uart_fifo_read()` clears the overrun flag without reporting it.
+- **USART RX FIFO not enabled** (`fifo-enable` DT property). At 420000 baud there's one interrupt every ~24 µs during a frame, which is fine at 64 MHz. If `UART errors` shows overruns, enable the FIFO on both boards.
 
 ### Voltage sensing
 
@@ -66,8 +76,9 @@ Last updated: 2026-11-07.
 - **FS-DB01 output pin on the Nucleo:** PA10 is still a placeholder. The custom board uses PA8 (final, per the schematic).
 - **CRSF channel → FS-DB01 bit mapping:** not decided.
 - **Failsafe behaviour:** not decided. This includes link-loss detection (timeout, and/or the link-statistics frame), which frame to send, and whether output should stay disabled until the link is up (currently `main()` disables it at boot and nothing enables it).
-- **Application structure:** planned as one control thread that receives CRSF frames from the UART (message queue or ring buffer from the ISR), maps them, handles failsafe and calls `fsdb01_set_frame()`. Not started.
-- **Hardware verification:** FS-DB01 output timing (see Status), and the full `dfu` → `dfu-util` flow with the MPU fix.
+- **Application structure:** planned as one control thread that reads `crsf::get_status()`, maps the channels, handles failsafe and calls `fsdb01_set_frame()`. Not started. The parser is done (see Status).
+- **CRSF on hardware:** test with a real ELRS receiver: frames arrive, no CRC or UART errors, and channel values match the radio.
+- **Hardware verification:** CRSF input (above), FS-DB01 output timing (see Status), and the full `dfu` → `dfu-util` flow with the MPU fix.
 - **`release.conf`** is empty. Release-only Kconfig currently lives in `prj.conf` and is undone in `debug.conf`.
 - **USB VID/PID** is still Zephyr's test ID.
 - **PCB:** schematic rev. 1 is done (`pcb/2026-020-crft-to-fsdb01/`, built from `pcb/INSTRUCTIONS.md`, see `pcb/PLAN.md`). Layout is next.

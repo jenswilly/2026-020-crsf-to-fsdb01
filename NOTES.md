@@ -70,10 +70,14 @@ Last updated: 2026-11-07.
 - **Hardware verification:** FS-DB01 output timing (see Status), and the full `dfu` → `dfu-util` flow with the MPU fix.
 - **`release.conf`** is empty. Release-only Kconfig currently lives in `prj.conf` and is undone in `debug.conf`.
 - **USB VID/PID** is still Zephyr's test ID.
-- **PCB:** schematic rev. 1 is done (`pcb/2026-020-crft-to-fsdb01/`, built from `pcb/INSTRUCTIONS.md`, see `pcb/PLAN.md`). Layout started 2026-11-07: footprints imported, outline and first placement done, not routed yet.
+- **PCB:** schematic rev. 1 is done (`pcb/2026-020-crft-to-fsdb01/`, built from `pcb/INSTRUCTIONS.md`, see `pcb/PLAN.md`). Layout started 2026-11-07: placed and routed, with GND pours on both layers. Silkscreen cleanup and a final review are still to do.
   - 2 layers, all parts on top. Narrow strip, 50 × 16 mm, 1 mm corner radius (origin at 100,100 in KiCad).
   - J1 (CRSF in) on the left short edge, J2 (FS-DB01 out) on the right one. The right-angle pins point straight out, with the pin row 1.8 mm from the edge.
   - J4 (SWD, PicoBlade) faces out of the top edge above the power section (D1, U2, C1, C3, C4, C9, R1). U1 is in the middle with C6–C8/C10 in a column on its left and C2/C5/R2 below it. J3 (USB-C) faces out of the bottom edge right of U1, with U3, R3–R6 above it. The LEDs (D2/D3, R7/R8) are next to J2.
+  - **Routing** (2026-11-07): autorouted with Freerouting 2.3.0 (needs Java 25), all at 0.2 mm track / 0.2 mm clearance, with 0.6/0.3 mm vias. VIN carries < 0.5 A, so no power netclass. 242 tracks, 75 vias. GND isn't routed: each SMD GND pad gets a short fanout track and via, with GND pours on F.Cu and B.Cu plus stitching vias.
+    - Konnect's Specctra export refuses this board (it only takes circle/rect pads, and the 0603 pads are roundrect). The workaround: export the DSN with `pcbnew.ExportSpecctraDSN` from a copy of the saved board, add the GND fanouts and a B.Cu plane first, run Freerouting headless, then validate the result on a copy with `kicad-cli pcb drc`. The final session file was imported in KiCad with File → Import → Specctra Session.
+    - Freerouting necks tracks down to 0.15/0.12 mm near pads even with `--router.automatic_neckdown=false`. They were widened to 0.2 mm afterwards, and one fanout via was moved to keep 0.2 mm clearance.
+    - Live DRC: 0 unconnected items. 8 errors, all on J3: the 4 accepted hole-clearance errors (see below), and 4 starved thermals on its GND pads A1/B12/A12/B1. Those pads are also tied to the shield tabs by tracks, so the starved thermals are cosmetic. A solid pad connection on J3 would clear them.
   - Open: J3's library footprint fails the board's 0.25 mm hole clearance between its own NPTH pegs and GND pads (0.19 mm). This needs a rule exception or a lower hole clearance; moving the part can't fix it. DRC also reports J3 as differing from its library copy.
 
 ## Environment notes

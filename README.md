@@ -17,20 +17,20 @@ Both MCUs have 512 KiB flash and 144 KiB RAM. Both run at 64 MHz from the intern
 
 ### Pin assignments
 
-Custom board pins are **provisional** until the schematic is final.
+Custom board pins match the schematic, rev. 1 (`pcb/2026-020-crft-to-fsdb01/`).
 
 | Function            | `crsf_fsdb01`        | `nucleo_g0b1re`                      |
 |---------------------|----------------------|--------------------------------------|
-| CRSF UART (USART1)  | PB6 TX, PB7 RX       | PC4 TX (Arduino D1), PC5 RX (Arduino D0) |
+| CRSF UART (USART1)  | PB7 RX (PB6 TX not connected) | PC4 TX (Arduino D1), PC5 RX (Arduino D0) |
 | USB D−/D+           | PA11/PA12            | PA11 (CN10-14)/PA12 (CN10-12)      |
-| `led0`              | PB0 (green)          | PA5 (LD4, green)                     |
-| `led1`              | PB1 (red)            | –                                    |
-| `fsdb01` signal out | PA8 (placeholder)    | PA10 (Arduino D2, placeholder)       |
-| `vsense0` (ADC1 IN0)| PA0                  | PA0 (Arduino A0)                     |
-| `vsense1` (ADC1 IN1)| PA1                  | PA1 (Arduino A1)                     |
+| `led0`              | PB0 (blue, active low) | PA5 (LD4, green)                     |
+| `led1`              | PB1 (red-orange, active low) | –                                    |
+| `fsdb01` signal out | PA8                  | PA10 (Arduino D2, placeholder)       |
+| `vsense0` (ADC1 IN0)| PA0 (Vin)            | PA0 (Arduino A0)                     |
+| `vsense1` (ADC1 IN1)| PA1 (VBUS)           | PA1 (Arduino A1)                     |
 | SWD                 | PA13 SWDIO, PA14 SWCLK | on-board ST-LINK                   |
 
-The CRSF link runs at 420000 baud, 8N1, full duplex.
+The CRSF link runs at 420000 baud, 8N1. The custom board wires only receiver TX → MCU RX (3-pin connector), so there is no telemetry back to the receiver.
 
 The two voltage sense inputs each go through a 100k/33k divider (ratio 33/133 ≈ 0.248), so up to ~13.3 V at the input gives 3.3 V at the pin. Each divider is a `voltage-divider` node in devicetree (`output-ohms`, `full-ohms`), read by Zephyr's voltage-divider sensor driver, which returns the voltage before the divider. The ADC uses 12 bits, the longest sampling time (the divider's source impedance is ~25k) and VDDA as reference, assumed to be 3.3 V (`vref-mv` default).
 

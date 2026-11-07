@@ -9,7 +9,7 @@ See `NOTES.md` for current status, past decisions and open items. Keep it up to 
 A bridge that reads **CRSF** from an **ExpressLRS receiver** (UART, 420000 baud) and drives a **FlySky FS-DB01** LED control module over its proprietary single-wire, pulse-width-coded protocol. That protocol is a 9-bit frame with 3 ms bit cells plus a 3 ms low gap.
 
 - The FS-DB01 protocol is known only from the reverse-engineered reference implementation https://github.com/osos11-Git/F401_FMS_FCX10_LED_REVERSE (`Core/Src/main.c`, STM32F401 HAL). Treat it as the source of truth, and check the code there before changing timing or bit meanings. The README's protocol section is a summary of it.
-- The FS-DB01 driver is in `drivers/fsdb01/` (C, binding `flysky,fsdb01` in `dts/bindings/`). The app gets it through the `fsdb01` alias. The output pins in both boards' devicetree are placeholders until the pin is assigned.
+- The FS-DB01 driver is in `drivers/fsdb01/` (C, binding `flysky,fsdb01` in `dts/bindings/`). The app gets it through the `fsdb01` alias. The output pin is PA8 on the custom board (final) and PA10 on the Nucleo (placeholder).
 - The CRSF channel → FS-DB01 bit mapping and the failsafe behavior are still open design decisions. Ask the user rather than inventing them.
 
 ## Toolchain and building
@@ -38,7 +38,7 @@ A bridge that reads **CRSF** from an **ExpressLRS receiver** (UART, 420000 baud)
 - Two targets: `nucleo_g0b1re` (stock Zephyr board plus `boards/nucleo_g0b1re.overlay`) and `crsf_fsdb01` (custom board in `boards/custom/crsf_fsdb01/`).
 - **No board `#ifdef`s in application code.** Get hardware through devicetree aliases (`crsf-uart`, `led0`, `led1`, …). Every alias the app uses must be defined for **both** boards.
 - Hardware description belongs in the board DTS (`crsf_fsdb01.dts`). App-level software choices (console routing, CDC ACM) belong in `boards/*.overlay` or `boards/usb_console.dtsi`. Kconfig common to both boards goes in `prj.conf`.
-- Custom board pin assignments are **provisional**. Keep the README pin table in sync when they change.
+- Custom board pin assignments follow the schematic (`pcb/`). Keep the DTS and the README pin table in sync with it.
 - No crystal on either board: SYSCLK is 64 MHz from the HSI, and USB uses HSI48 with `crs-usb-sof`.
 - On the Nucleo, PA11/PA12 are used for USB. I2C2 and FDCAN1 are disabled in the overlay because the stock board config assigns them to the same pins. Watch for similar pin conflicts when enabling peripherals.
 

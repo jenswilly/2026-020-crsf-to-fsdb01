@@ -2,7 +2,7 @@
 
 Working notes for picking up development, on any machine or in a new Claude Code session. `README.md` covers the hardware, pins, protocol and build; this file covers where things stand and why. Update it when an item is settled.
 
-Last updated: 2026-10-13.
+Last updated: 2026-11-07.
 
 ## Status
 
@@ -28,6 +28,12 @@ Last updated: 2026-10-13.
 - **Bit timing:** one-shot `k_timer` re-armed at each edge (ISR context), scheduled with **absolute** deadlines (`K_TIMEOUT_ABS_TICKS`). Relative re-arms add 1 tick per edge in Zephyr 4.4 (`kernel/timeout.c`, `timeout.ticks + 1`), which would stretch bits to ~3.2 ms. The Kconfig selects `TIMEOUT_64BIT` for this. Tick rate is 10 kHz.
   - Fallback if timing proves too loose: a hardware timer in PWM mode (3 ms period, 1 or 2 ms pulse).
 - **`invert` DT property** inverts every level (frames, gap, disabled state, level at boot) for an inverting level shifter. Don't combine it with `GPIO_ACTIVE_LOW` in `out-gpios`; the two cancel out.
+
+### Custom board vs. schematic
+
+- **Custom board DTS matches schematic rev. 1** (checked pin by pin through Konnect on 2026-11-07): PB7 CRSF RX, PA8 FS-DB01 out, PB0 blue LED (`led0`), PB1 red-orange LED (`led1`), PA0 Vin sense, PA1 VBUS sense, PA11/PA12 USB, PA13/PA14 SWD.
+  - The LEDs are wired anode to 3V3, cathode to the GPIO, so they're `GPIO_ACTIVE_LOW`.
+  - PB6 (USART1 TX) isn't connected on the board, so the custom board can't send CRSF telemetry. The DTS still muxes it as TX; that's harmless.
 
 ### Voltage sensing
 
@@ -57,17 +63,14 @@ Last updated: 2026-10-13.
 
 ## Open items
 
-- **FS-DB01 output pin:** placeholders, PA10 on the Nucleo, PA8 on the custom board.
+- **FS-DB01 output pin on the Nucleo:** PA10 is still a placeholder. The custom board uses PA8 (final, per the schematic).
 - **CRSF channel → FS-DB01 bit mapping:** not decided.
 - **Failsafe behaviour:** not decided. This includes link-loss detection (timeout, and/or the link-statistics frame), which frame to send, and whether output should stay disabled until the link is up (currently `main()` disables it at boot and nothing enables it).
 - **Application structure:** planned as one control thread that receives CRSF frames from the UART (message queue or ring buffer from the ISR), maps them, handles failsafe and calls `fsdb01_set_frame()`. Not started.
 - **Hardware verification:** FS-DB01 output timing (see Status), and the full `dfu` → `dfu-util` flow with the MPU fix.
 - **`release.conf`** is empty. Release-only Kconfig currently lives in `prj.conf` and is undone in `debug.conf`.
 - **USB VID/PID** is still Zephyr's test ID.
-- **PCB:** the schematic (`pcb/2026-020-crft-to-fsdb01/`) is being built from `pcb/INSTRUCTIONS.md` (see `pcb/PLAN.md`). When it's done, bring the firmware in line with it:
-  - Custom board LEDs (PB0/PB1) are active low: switch the DTS to `GPIO_ACTIVE_LOW`, and relabel them blue (`led0`, PB0) and red-orange (`led1`, PB1) in the DTS and README.
-  - Finalize the FS-DB01 output pin (PA8) in the custom board DTS and README.
-  - Check the `vsense0`/`vsense1` divider ratio (100k/33k) and ADC pins (PA0/PA1) against the schematic, on both boards.
+- **PCB:** schematic rev. 1 is done (`pcb/2026-020-crft-to-fsdb01/`, built from `pcb/INSTRUCTIONS.md`, see `pcb/PLAN.md`). Layout is next.
 
 ## Environment notes
 

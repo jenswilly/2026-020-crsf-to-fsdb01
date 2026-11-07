@@ -46,20 +46,21 @@ The device currently uses Zephyr's test USB VID/PID (`0x2fe3:0x0004`). Productio
 
 ### Shell commands
 
-`leds` (in `src/shell_leds.cpp`) drives the FS-DB01 driver by hand, for testing the output before the CRSF mapping exists:
+`leds` (in `src/shell_leds.cpp`) drives the FS-DB01 driver by hand, for testing the output without a receiver:
 
 | Command                       | Action                                                       |
 |-------------------------------|--------------------------------------------------------------|
-| `leds status`                 | Output enabled/disabled, raw frame (hex), each bit on/off    |
-| `leds on <led\|all\|0-7>`     | Set bit(s)                                                   |
-| `leds off <led\|all\|0-7>`    | Clear bit(s)                                                 |
-| `leds toggle <led\|all\|0-7>` | Toggle bit(s)                                                |
+| `leds status`                 | Output enabled/disabled, auto/manual mode, link state, raw frame (hex), each bit on/off |
+| `leds on <led\|all\|0-7>`     | Set bit(s); switches to manual mode                          |
+| `leds off <led\|all\|0-7>`    | Clear bit(s); switches to manual mode                        |
+| `leds toggle <led\|all\|0-7>` | Toggle bit(s); switches to manual mode                       |
+| `leds auto`                   | Back to auto mode: frames follow the CRSF mapping again      |
 | `leds enable`                 | Start sending frames                                         |
 | `leds disable`                | Stop sending and hold the line low (high with `invert`)      |
 
 LED names (Tab completes them): `right` (bit 0), `left` (1), `ill1` (2), `ill2` (3), `brake` (5), `nosig_fast` (6), `nosig_slow` (7). Use `4` for the unknown bit 4. `all` covers bits 0–7; bit 8 is always 0.
 
-`main()` disables the output at boot, so run `leds enable` before expecting anything on the wire. on/off/toggle only change the frame bits.
+The output is enabled at boot. In auto mode (the default), the control thread sets the frame from CRSF every 10 ms, so on/off/toggle switch to manual mode first, or their changes would be overwritten straight away. Manual mode lasts until `leds auto` or a reboot. enable/disable work in either mode; on/off/toggle only change the frame bits.
 
 `voltage` (in `src/shell_voltage.cpp`) reads both voltage sense inputs and prints the input voltage (before the divider) and the voltage at the pin:
 
@@ -141,7 +142,19 @@ All of the following comes from the reverse-engineered reference implementation;
 
 The reference firmware's power-on state is bits 6 and 7 set: the no-signal indication.
 
-The mapping from CRSF channels to FS-DB01 bits, and the failsafe behavior, are **not decided yet**.
+### Mapping and failsafe
+
+A control thread (`src/control.cpp`) checks the latest CRSF channels every 10 ms and sets the FS-DB01 frame. Each rule (`src/mapping.cpp`) turns an output on while one channel is inside an inclusive interval in µs. An output is on if any of its rules match. For now the rules are hardcoded. Later they'll be configurable from the shell and stored in flash.
+
+| Output         | Channel | Interval (µs) | Meaning               |
+|----------------|---------|---------------|-----------------------|
+| Right (bit 0)  | 5       | 1700–2100     | ch5 high              |
+| Left (bit 1)   | 5       | 900–1300      | ch5 low               |
+| Ill. 1 (bit 2) | 6       | 1300–2100     | ch6 mid or high       |
+| Ill. 2 (bit 3) | 6       | 1700–2100     | ch6 high              |
+| Brake (bit 5)  | 2       | 900–1450      | throttle below center |
+
+**Failsafe:** the output is enabled at boot with the failsafe frame, bit 6 only (no-signal, fast blink). It switches to the mapped frame once RC channel frames arrive, and back to the failsafe frame if none arrive for 500 ms. ELRS receivers stop sending RC frames when the link is lost.
 
 ## Development environment
 
@@ -210,6 +223,8 @@ src/                            Application sources (C++); shell commands in src
   bootloader.cpp                Reboot into the STM32 USB DFU bootloader (`dfu` command)
   crsf.cpp                      CRSF receiver: UART ISR, latest channels/link statistics
   crsf_parser.cpp               CRSF frame parser, CRC, channel decoding (no Zephyr dependencies)
+  mapping.cpp                   CRSF channel → FS-DB01 frame rules
+  control.cpp                   Control thread: mapping and failsafe
 drivers/                        In-tree device drivers (C)
   fsdb01/                       FS-DB01 driver: source, header, Kconfig
 dts/bindings/                   Devicetree bindings for the in-tree drivers (flysky,fsdb01)

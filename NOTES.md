@@ -9,7 +9,8 @@ Last updated: 2026-11-07.
 - **Builds:** all five presets (`nucleo`, `nucleo-debug`, `nucleo-vcp`, `custom`, `custom-debug`) build with zero warnings. Release builds use ~90 KB flash, debug builds ~275 KB flash and ~32 KB RAM.
 - **Debugging works on the Nucleo** (`Debug: nucleo-debug` in VS Code): the debug build reaches `main()`, stops at breakpoints and runs without faults, and USB enumerates.
 - **FS-DB01 driver** (`drivers/fsdb01/`) is functional but **its output is not yet verified on hardware**. Check with a logic analyser on the Nucleo's PA10 (Arduino D2). With the no-signal frame (bits 6 and 7), each 30 ms frame should be six short pulses (1 ms high / 2 ms low), two long ones (2 ms / 1 ms), one short, then 3 ms low.
-- **`main()`** checks devices, **disables FS-DB01 output at boot**, and blinks `led0`. Run `leds enable` to start output.
+- **`main()`** checks devices, starts the CRSF receiver and the control thread, and blinks `led0`. **FS-DB01 output is enabled at boot** with the failsafe frame.
+- **Mapping and control thread** (`src/mapping.cpp`, `src/control.cpp`) are done, with hardcoded rules. **Not tested with a receiver yet.** `map_channels()` passed a host-side test of every rule in the table, and of rules with an invalid channel; that test isn't in the repo either.
 - **Shell** (`src/shell_*.cpp`): `leds` drives the driver by hand, `voltage` reads the two voltage sense inputs, `dfu` reboots into the USB DFU bootloader; see README.
   - Release builds (`prj.conf`) turn off `kernel`, `device`, `devmem`, `date`, `retval` and the VT100 commands (`clear`); prompt `> `.
   - Debug builds (`debug.conf`) turn `kernel`, `device`, `devmem` and VT100 back on; prompt `DBG > `.
@@ -45,6 +46,14 @@ Last updated: 2026-11-07.
 - **UART errors:** `uart_err_check()` is called before reading, because the STM32 driver's `uart_fifo_read()` clears the overrun flag without reporting it.
 - **USART RX FIFO not enabled** (`fifo-enable` DT property). At 420000 baud there's one interrupt every ~24 µs during a frame, which is fine at 64 MHz. If `UART errors` shows overruns, enable the FIFO on both boards.
 
+### Mapping and failsafe (decided 2026-11-07)
+
+- **Rules:** CRSF channel (1–16), inclusive min/max in **µs** (converted with `crsf::channel_to_us()`), and the FS-DB01 bits to turn on. An output is on if any of its rules match. The first table is in README; it's hardcoded until the rules are configurable from the CLI and stored in flash.
+- **Failsafe:** send `FSDB01_NO_SIGNAL_FAST` (bit 6 only, not 6+7) from boot until RC frames arrive, and again when none have arrived for 500 ms. The output is enabled at boot, unlike before.
+  - Link loss is detected only from the RC frame timeout. Link statistics (e.g. LQ 0) aren't used.
+- **Control thread** (`control`, priority 5) polls `crsf::get_status()` every 10 ms instead of being woken per frame. The FS-DB01 latches a new frame only every 30 ms, so that's enough.
+- **Manual mode:** `leds on/off/toggle` set manual mode, so the control thread stops setting frames. Otherwise their changes would be overwritten within 10 ms. `leds auto` switches back. Manual mode isn't persisted.
+
 ### Voltage sensing
 
 - **PA0/PA1 (ADC1 IN0/IN1) on both boards**, behind 100k/33k dividers. Described in devicetree as `voltage-divider` nodes (aliases `vsense0`, `vsense1`) and read through Zephyr's voltage-divider sensor driver, so the divider ratio lives in DT rather than in code. Needs `CONFIG_ADC` and `CONFIG_SENSOR`.
@@ -74,9 +83,8 @@ Last updated: 2026-11-07.
 ## Open items
 
 - **FS-DB01 output pin on the Nucleo:** PA10 is still a placeholder. The custom board uses PA8 (final, per the schematic).
-- **CRSF channel → FS-DB01 bit mapping:** not decided.
-- **Failsafe behaviour:** not decided. This includes link-loss detection (timeout, and/or the link-statistics frame), which frame to send, and whether output should stay disabled until the link is up (currently `main()` disables it at boot and nothing enables it).
-- **Application structure:** planned as one control thread that reads `crsf::get_status()`, maps the channels, handles failsafe and calls `fsdb01_set_frame()`. Not started. The parser is done (see Status).
+- **Configurable mapping:** rules are hardcoded in `src/mapping.cpp`. Next: edit them from the shell and store them in flash (e.g. Zephyr settings on NVS/ZMS, which needs a storage partition in both boards' DTS).
+- **Control thread stack:** 1024 bytes, not measured yet. Check it with `kernel thread stacks` in a debug build with a receiver connected.
 - **CRSF on hardware:** test with a real ELRS receiver: frames arrive, no CRC or UART errors, and channel values match the radio.
 - **Hardware verification:** CRSF input (above), FS-DB01 output timing (see Status), and the full `dfu` → `dfu-util` flow with the MPU fix.
 - **`release.conf`** is empty. Release-only Kconfig currently lives in `prj.conf` and is undone in `debug.conf`.

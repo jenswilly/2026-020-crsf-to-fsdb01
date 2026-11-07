@@ -20,8 +20,10 @@ project(crsf_to_fsdb01)
 target_sources(app PRIVATE 
     src/main.cpp
     src/bootloader.cpp
+    src/control.cpp
     src/crsf.cpp
     src/crsf_parser.cpp
+    src/mapping.cpp
     src/shell_crsf.cpp
     src/shell_dfu.cpp
     src/shell_leds.cpp

@@ -10,7 +10,7 @@ A bridge that reads **CRSF** from an **ExpressLRS receiver** (UART, 420000 baud)
 
 - The FS-DB01 protocol is known only from the reverse-engineered reference implementation https://github.com/osos11-Git/F401_FMS_FCX10_LED_REVERSE (`Core/Src/main.c`, STM32F401 HAL). Treat it as the source of truth, and check the code there before changing timing or bit meanings. The README's protocol section is a summary of it.
 - The FS-DB01 driver is in `drivers/fsdb01/` (C, binding `flysky,fsdb01` in `dts/bindings/`). The app gets it through the `fsdb01` alias. The output pin is PA8 on the custom board (final) and PA10 on the Nucleo (placeholder).
-- The CRSF channel → FS-DB01 bit mapping and the failsafe behavior are still open design decisions. Ask the user rather than inventing them.
+- The CRSF channel → FS-DB01 mapping (interval rules) and the failsafe behavior are described in README and NOTES. Ask the user before changing either.
 
 ## Toolchain and building
 

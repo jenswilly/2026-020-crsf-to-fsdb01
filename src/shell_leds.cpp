@@ -14,6 +14,7 @@
 #include <optional>
 #include <string_view>
 
+#include "control.h"
 #include "fsdb01.h"
 
 namespace {
@@ -74,7 +75,7 @@ std::optional<uint16_t> parse_leds(const shell* sh, std::string_view arg) {
     return std::nullopt;
 }
 
-/* Apply op(frame, mask) to the current frame */
+/* Apply op(frame, mask) to the current frame; switches to manual mode */
 template <typename Op>
 int modify_frame(const shell* sh, char** argv, Op op) {
     if (!check_ready(sh)) {
@@ -84,6 +85,11 @@ int modify_frame(const shell* sh, char** argv, Op op) {
     auto mask = parse_leds(sh, argv[1]);
     if (!mask) {
         return -EINVAL;
+    }
+
+    if (!control::is_manual()) {
+        control::set_manual(true);
+        shell_print(sh, "Manual mode: CRSF mapping paused, 'leds auto' resumes it");
     }
 
     uint16_t frame = op(fsdb01_get_frame(fsdb01), *mask);
@@ -100,8 +106,10 @@ int cmd_status(const shell* sh, size_t, char**) {
     }
 
     uint16_t frame = fsdb01_get_frame(fsdb01);
-    shell_print(sh, "Output: %s   Frame: 0x%03x",
-                fsdb01_is_enabled(fsdb01) ? "enabled" : "disabled", frame);
+    shell_print(sh, "Output: %s   Mode: %s   Link: %s   Frame: 0x%03x",
+                fsdb01_is_enabled(fsdb01) ? "enabled" : "disabled",
+                control::is_manual() ? "manual" : "auto", control::link_up() ? "up" : "lost",
+                frame);
     for (unsigned int bit = 0; bit < user_bits; bit++) {
         shell_print(sh, "  %-11s (%u)  %s", bit_name(bit), bit, (frame & BIT(bit)) ? "on" : "off");
     }
@@ -118,6 +126,12 @@ int cmd_off(const shell* sh, size_t, char** argv) {
 
 int cmd_toggle(const shell* sh, size_t, char** argv) {
     return modify_frame(sh, argv, [](uint16_t frame, uint16_t mask) { return frame ^ mask; });
+}
+
+int cmd_auto(const shell* sh, size_t, char**) {
+    control::set_manual(false);
+    shell_print(sh, "Auto mode: frames follow the CRSF mapping");
+    return 0;
 }
 
 int cmd_enable(const shell* sh, size_t, char**) {
@@ -168,6 +182,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(on, &dsub_led_names, "Turn LED on: <led|all|0-7>", cmd_on, 2, 0),
     SHELL_CMD_ARG(off, &dsub_led_names, "Turn LED off: <led|all|0-7>", cmd_off, 2, 0),
     SHELL_CMD_ARG(toggle, &dsub_led_names, "Toggle LED: <led|all|0-7>", cmd_toggle, 2, 0),
+    SHELL_CMD(auto, NULL, "Resume CRSF mapping after on/off/toggle", cmd_auto),
     SHELL_CMD(enable, NULL, "Start sending frames", cmd_enable),
     SHELL_CMD(disable, NULL, "Stop sending; hold line idle", cmd_disable), SHELL_SUBCMD_SET_END);
 

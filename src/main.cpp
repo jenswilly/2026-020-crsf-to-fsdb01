@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include "control.h"
 #include "crsf.h"
 #include "fsdb01.h"
 
@@ -35,7 +36,10 @@ int main() {
         LOG_ERR("FS-DB01 %s not ready", fsdb01->name);
         return 0;
     }
-    fsdb01_disable(fsdb01); // Start with FS-DB01 disabled
+    if (int ret = control::start(fsdb01); ret < 0) {
+        LOG_ERR("Control failed to start (%d)", ret);
+        return 0;
+    }
 
     LOG_INF("Running on %s, CRSF on %s (C++ %ld)", CONFIG_BOARD_TARGET, crsf_uart->name,
             __cplusplus);

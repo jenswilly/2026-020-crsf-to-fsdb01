@@ -18,22 +18,22 @@
 		zephyr,flash = &flash0;
 	};
 
-	/* TODO: pin assignments are provisional until the schematic is final */
+	/* Pin assignments match schematic rev. 1 */
+	/* Anode to 3V3 through a resistor, cathode sunk by the GPIO */
 	leds: leds {
 		compatible = "gpio-leds";
 
-		green_led: led_0 {
-			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
-			label = "Status LED (green)";
+		blue_led: led_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+			label = "Status LED (blue)";
 		};
 
-		red_led: led_1 {
-			gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
-			label = "Status LED (red)";
+		red_orange_led: led_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "Status LED (red-orange)";
 		};
 	};
 
-	/* TODO: placeholder pin, FS-DB01 output not assigned yet */
 	fsdb01: fsdb01 {
 		compatible = "flysky,fsdb01";
 		out-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
@@ -58,8 +58,8 @@
 		fsdb01 = &fsdb01;
 		vsense0 = &vsense0;
 		vsense1 = &vsense1;
-		led0 = &green_led;
-		led1 = &red_led;
+		led0 = &blue_led;
+		led1 = &red_orange_led;
 		crsf-uart = &usart1;
 		watchdog0 = &iwdg;
 	};
@@ -103,7 +103,7 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
-/* CRSF link: 420000 baud, 8N1, full duplex */
+/* CRSF link: 420000 baud, 8N1. Only RX (PB7) is wired on the board; PB6 TX is unconnected */
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	pinctrl-names = "default";

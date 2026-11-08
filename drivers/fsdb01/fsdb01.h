@@ -19,9 +19,8 @@ extern "C" {
 /* Frame bits, sent bit 0 first (see README, FS-DB01 protocol) */
 #define FSDB01_TURN_RIGHT     BIT(0)
 #define FSDB01_TURN_LEFT      BIT(1)
-#define FSDB01_ILLUMINATION_1 BIT(2)
-#define FSDB01_ILLUMINATION_2 BIT(3)
-#define FSDB01_REVERSE_BRAKE  BIT(5)
+#define FSDB01_FRONT_AND_TOP  BIT(3)
+#define FSDB01_REVERSE_BRAKE  BIT(4)
 #define FSDB01_NO_SIGNAL_FAST BIT(6)
 #define FSDB01_NO_SIGNAL_SLOW BIT(7)
 

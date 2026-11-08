@@ -2,7 +2,7 @@
 
 Working notes for picking up development, on any machine or in a new Claude Code session. `README.md` covers the hardware, pins, protocol and build; this file covers where things stand and why. Update it when an item is settled.
 
-Last updated: 2026-11-07.
+Last updated: 2026-11-08.
 
 ## Status
 
@@ -16,7 +16,7 @@ Last updated: 2026-11-07.
   - Debug builds (`debug.conf`) turn `kernel`, `device`, `devmem` and VT100 back on; prompt `DBG > `.
 - **Logging** goes through the shell's log backend (`CONFIG_SHELL_LOG_BACKEND`, no UART log backend), so it always appears where the shell is: CDC ACM, or USART2 in `nucleo-vcp`. `printk()` goes into the log too.
 - **DFU flashing works on hardware**, apart from the `EMPTY` gotcha (see below). The MPU fix in the `dfu` jump is in place, but the full `dfu` → `dfu-util` flow hasn't been re-run since.
-- **CRSF parser** (`src/crsf*.cpp`) is done but **not tested with a receiver yet**. `main()` starts it. `crsf status` and `crsf channels` show what it gets. The parser logic passed a host-side test: the CRC-8/DVB-S2 check value, a channel pack/unpack round trip, resync after garbage and bad lengths, CRC errors, timeouts across timer wraparound, and link statistics. That test isn't in the repo.
+- **CRSF parser** (`src/crsf*.cpp`) is done and **receives frames from a real ELRS receiver** on the Nucleo (2026-11-08, after enabling the USART RX FIFO). `main()` starts it. `crsf status` and `crsf channels` show what it gets. The parser logic passed a host-side test: the CRC-8/DVB-S2 check value, a channel pack/unpack round trip, resync after garbage and bad lengths, CRC errors, timeouts across timer wraparound, and link statistics. That test isn't in the repo.
 
 ## Decisions and why
 
@@ -44,7 +44,7 @@ Last updated: 2026-11-07.
 - **Split in two:** `crsf_parser.{h,cpp}` is pure C++ (bytes in, CRC-checked frames out, decoders), so it can be tested on the host. `crsf.{h,cpp}` is the Zephyr UART part.
 - **Resync:** the parser waits for `0xC8`, rejects lengths outside 2–62, and drops a partial frame if it takes longer than 1750 µs from its sync byte (Betaflight's `CRSF_TIME_NEEDED_PER_FRAME_US`), timed with `k_cycle_get_32()`. Only `0xC8` is accepted as a sync byte.
 - **UART errors:** `uart_err_check()` is called before reading, because the STM32 driver's `uart_fifo_read()` clears the overrun flag without reporting it.
-- **USART RX FIFO not enabled** (`fifo-enable` DT property). At 420000 baud there's one interrupt every ~24 µs during a frame, which is fine at 64 MHz. If `UART errors` shows overruns, enable the FIFO on both boards.
+- **USART RX FIFO enabled** (`fifo-enable` on `usart1`, both boards). Without it, the first test with a receiver (2026-11-08, `nucleo-debug`) showed ~150 UART errors/s and no valid frames: bytes were dropped (a captured frame started `C8 16` with the length byte missing). With one byte buffered, any ISR latency over ~24 µs overruns. The `-O0` debug build (and probably other interrupts, e.g. USB) exceeded that. With the FIFO, the same setup gets ~244 RC frames/s (ELRS 250 Hz) and ~10 link statistics frames/s, with no UART, CRC or length errors. The 8-byte FIFO gives ~190 µs.
 
 ### Mapping and failsafe (decided 2026-11-07)
 

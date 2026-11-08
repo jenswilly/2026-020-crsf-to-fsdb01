@@ -17,13 +17,12 @@ namespace {
 /* Hardcoded for now; later configurable from the shell and stored in flash */
 constexpr std::array rules{
     /* 3-position switch on ch5: low = left, high = right */
-    Rule{.channel = 5, .min_us = 1700, .max_us = 2100, .output = FSDB01_TURN_RIGHT},
-    Rule{.channel = 5, .min_us = 900, .max_us = 1300, .output = FSDB01_TURN_LEFT},
+    Rule{.channel = 2, .min_us = 1700, .max_us = 2100, .output = FSDB01_TURN_RIGHT},
+    Rule{.channel = 2, .min_us = 900, .max_us = 1300, .output = FSDB01_TURN_LEFT},
     /* 3-position switch on ch6: mid = step 1, high = steps 1 and 2 */
-    Rule{.channel = 6, .min_us = 1300, .max_us = 2100, .output = FSDB01_ILLUMINATION_1},
-    Rule{.channel = 6, .min_us = 1700, .max_us = 2100, .output = FSDB01_ILLUMINATION_2},
-    /* Throttle below center */
-    Rule{.channel = 2, .min_us = 900, .max_us = 1450, .output = FSDB01_REVERSE_BRAKE},
+    Rule{.channel = 5, .min_us = 900, .max_us = 1400, .output = FSDB01_FRONT_AND_TOP},
+    /* Throttle near center */
+    Rule{.channel = 1, .min_us = 1400, .max_us = 1600, .output = FSDB01_REVERSE_BRAKE},
 };
 
 }  // namespace

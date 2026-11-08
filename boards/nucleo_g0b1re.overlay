@@ -46,6 +46,8 @@
 
 &usart1 {
 	current-speed = <420000>;
+	/* RX FIFO: without it, ISR latency over ~24 us (one byte) overruns */
+	fifo-enable;
 };
 
 /* PA0/PA1 pinctrl, clock and status come from the stock board */

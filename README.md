@@ -156,6 +156,8 @@ A control thread (`src/control.cpp`) checks the latest CRSF channels every 10 ms
 
 **Failsafe:** the output is enabled at boot with the failsafe frame, bit 6 only (no-signal, fast blink). It switches to the mapped frame once RC channel frames arrive, and back to the failsafe frame if none arrive for 500 ms. ELRS receivers stop sending RC frames when the link is lost.
 
+RC Channels are mapped with 988 us being mimimum, 1500 being middle and 2012 being maximum value.
+
 ## Development environment
 
 Everything is built in a VS Code devcontainer (`.devcontainer/`), based on Ubuntu 24.04:

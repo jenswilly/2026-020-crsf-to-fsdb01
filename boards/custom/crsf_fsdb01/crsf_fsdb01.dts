@@ -108,6 +108,8 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	pinctrl-names = "default";
 	current-speed = <420000>;
+	/* RX FIFO: without it, ISR latency over ~24 us (one byte) overruns */
+	fifo-enable;
 	status = "okay";
 };
 

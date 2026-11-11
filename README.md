@@ -86,13 +86,13 @@ If `Bytes` goes up but there are no frames, check the baud rate and that the sig
 The `dfu` shell command reboots into the STM32's built-in system bootloader, which enumerates on USB as `0483:df11`. No BOOT0 pin or jumper is used; the option bytes stay at their factory defaults. Then flash with:
 
 ```sh
-dfu-util -d 0483:df11 -a 0 -s 0x08000000:leave -D build_custom/zephyr/zephyr.bin
+dfu-util -d 0483:df11 -a 0 -s 0x08000000:leave -D build/custom/zephyr/zephyr.bin
 ```
 
 or use the wrapper, which checks the file and that the bootloader is present first:
 
 ```sh
-scripts/dfu_flash.sh build_custom/zephyr/zephyr.bin
+scripts/dfu_flash.sh build/custom/zephyr/zephyr.bin
 ```
 
 `-d 0483:df11` selects the STM32 bootloader, so other DFU-capable devices, such as some laptop webcams, are never targeted. If several boards are in DFU mode at once, add `-S <serial>` (shown by `dfu-util -l`), or set `DFU_SERIAL=<serial>` for the script (with sudo: `sudo DFU_SERIAL=… scripts/dfu_flash.sh …`). **After flashing, power-cycle the board fully.** While erasing, the bootloader sets the `EMPTY` flag in `FLASH_ACR`. While it's set, every reset starts the bootloader again instead of the new firmware, and only a real power-on clears it. `:leave` and the reset button don't, so the board stays in DFU mode. On the Nucleo, the ST-LINK USB also powers the board, so unplug that cable too. Without a power cycle, clear the flag over SWD instead:
@@ -180,11 +180,11 @@ Builds are driven by **CMake presets** (`CMakePresets.json`), one per board and 
 
 | Preset         | Board target                | Mode    | Build directory        |
 |----------------|-----------------------------|---------|------------------------|
-| `nucleo`       | `nucleo_g0b1re/stm32g0b1xx` | release | `build_nucleo/`        |
-| `nucleo-debug` | `nucleo_g0b1re/stm32g0b1xx` | debug   | `build_nucleo-debug/`  |
-| `nucleo-vcp`   | `nucleo_g0b1re/stm32g0b1xx`, console on ST-LINK VCP | debug | `build_nucleo-vcp/` |
-| `custom`       | `crsf_fsdb01/stm32g0b1xx`   | release | `build_custom/`        |
-| `custom-debug` | `crsf_fsdb01/stm32g0b1xx`   | debug   | `build_custom-debug/`  |
+| `nucleo`       | `nucleo_g0b1re/stm32g0b1xx` | release | `build/nucleo/`        |
+| `nucleo-debug` | `nucleo_g0b1re/stm32g0b1xx` | debug   | `build/nucleo-debug/`  |
+| `nucleo-vcp`   | `nucleo_g0b1re/stm32g0b1xx`, console on ST-LINK VCP | debug | `build/nucleo-vcp/` |
+| `custom`       | `crsf_fsdb01/stm32g0b1xx`   | release | `build/custom/`        |
+| `custom-debug` | `crsf_fsdb01/stm32g0b1xx`   | debug   | `build/custom-debug/`  |
 
 The build mode is the `APP_BUILD_MODE` cache variable, set by the hidden `debug`/`release` presets. `CMakeLists.txt` adds `debug.conf` or `release.conf` on top of `prj.conf` for every board, so mode-specific Kconfig goes there; `debug.conf` builds with `-O0` (`CONFIG_NO_OPTIMIZATIONS`), thread info, an MPU stack guard and extra shell commands. `-O0` rather than `-Og` because the Cortex-M0+ has only 4 hardware breakpoints, and at `-Og` one source line often compiles to several copies that each need one (OpenOCD: `Can not find free FPB Comparator`). A preset can still add board-specific fragments with `EXTRA_CONF_FILE`; they're merged after the mode file.
 
@@ -210,7 +210,7 @@ cmake --build --preset custom --target ram_report # memory usage
 
 Replace `custom` with another preset, e.g. `custom-debug` or `nucleo`. For a clean rebuild, delete the build directory, or run `cmake --preset <name> --fresh`.
 
-The `flash`, `debug` and `debugserver` targets call Zephyr's west runners internally. `west` still works on the same build directories, e.g. `west flash -d build_custom`, or `west flash -d build_custom -r <runner>` to pick another runner. Both boards also define STM32CubeProgrammer, pyOCD and J-Link runners, but only OpenOCD is installed in the container. The stock Nucleo board defaults to STM32CubeProgrammer, so the `nucleo` presets set `BOARD_FLASH_RUNNER=openocd`. Flashing and Cortex-Debug both use the OpenOCD and GDB from the Zephyr SDK.
+The `flash`, `debug` and `debugserver` targets call Zephyr's west runners internally. `west` still works on the same build directories, e.g. `west flash -d build/custom`, or `west flash -d build/custom -r <runner>` to pick another runner. Both boards also define STM32CubeProgrammer, pyOCD and J-Link runners, but only OpenOCD is installed in the container. The stock Nucleo board defaults to STM32CubeProgrammer, so the `nucleo` presets set `BOARD_FLASH_RUNNER=openocd`. Flashing and Cortex-Debug both use the OpenOCD and GDB from the Zephyr SDK.
 
 ## Project layout
 

@@ -15,6 +15,7 @@
 
 #include "crsf.h"
 #include "mapping.h"
+#include "thread_constants.h"
 
 LOG_MODULE_REGISTER(control, LOG_LEVEL_INF);
 
@@ -23,8 +24,8 @@ namespace control {
 namespace {
 
 constexpr int poll_ms = 10;
-constexpr size_t stack_size = 1024;
-constexpr int priority = 5;
+constexpr size_t stack_size = kThreadStackSizeDefault;
+constexpr int priority = kThreadPriorityHigh;
 
 K_THREAD_STACK_DEFINE(stack, stack_size);
 k_thread thread;

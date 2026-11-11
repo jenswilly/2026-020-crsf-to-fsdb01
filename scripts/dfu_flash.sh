@@ -3,7 +3,7 @@
 # Flash a firmware image over USB DFU, using the STM32 system bootloader.
 #
 # Usage: scripts/dfu_flash.sh <firmware.bin>
-#   e.g. scripts/dfu_flash.sh build_custom/zephyr/zephyr.bin
+#   e.g. scripts/dfu_flash.sh build/custom/zephyr/zephyr.bin
 #
 # Put the board in DFU mode first with the `dfu` shell command. Set
 # DFU_SERIAL=<serial> to pick one board when several are in DFU mode

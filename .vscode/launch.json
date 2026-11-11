@@ -1,51 +1,59 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug: nucleo-debug",
-      "type": "cortex-debug",
-      "request": "launch",
-      "servertype": "openocd",
-      "cwd": "${workspaceFolder}",
-      "executable": "${workspaceFolder}/build_nucleo-debug/zephyr/zephyr.elf",
-      "configFiles": ["/opt/zephyrproject/zephyr/boards/st/nucleo_g0b1re/support/openocd.cfg"],
-      "device": "STM32G0B1RE",
-      "runToEntryPoint": "main",
-      "preLaunchTask": "Build: nucleo-debug"
-    },
-    {
-      "name": "Debug: nucleo-vcp",
-      "type": "cortex-debug",
-      "request": "launch",
-      "servertype": "openocd",
-      "cwd": "${workspaceFolder}",
-      "executable": "${workspaceFolder}/build_nucleo-vcp/zephyr/zephyr.elf",
-      "configFiles": ["/opt/zephyrproject/zephyr/boards/st/nucleo_g0b1re/support/openocd.cfg"],
-      "device": "STM32G0B1RE",
-      "runToEntryPoint": "main",
-      "preLaunchTask": "Build: nucleo-vcp"
-    },
-    {
-      "name": "Debug: custom-debug",
-      "type": "cortex-debug",
-      "request": "launch",
-      "servertype": "openocd",
-      "cwd": "${workspaceFolder}",
-      "executable": "${workspaceFolder}/build_custom-debug/zephyr/zephyr.elf",
-      "configFiles": ["${workspaceFolder}/boards/custom/crsf_fsdb01/support/openocd.cfg"],
-      "device": "STM32G0B1CE",
-      "runToEntryPoint": "main",
-      "preLaunchTask": "Build: custom-debug"
-    },
-    {
-      "name": "Attach: custom-debug",
-      "type": "cortex-debug",
-      "request": "attach",
-      "servertype": "openocd",
-      "cwd": "${workspaceFolder}",
-      "executable": "${workspaceFolder}/build_custom-debug/zephyr/zephyr.elf",
-      "configFiles": ["${workspaceFolder}/boards/custom/crsf_fsdb01/support/openocd.cfg"],
-      "device": "STM32G0B1CE"
-    }
-  ]
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug: nucleo-debug",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/nucleo-debug/zephyr/zephyr.elf",
+            "configFiles": [
+                "/opt/zephyrproject/zephyr/boards/st/nucleo_g0b1re/support/openocd.cfg"
+            ],
+            "device": "STM32G0B1RE",
+            "runToEntryPoint": "main",
+            "preLaunchTask": "Build: nucleo-debug"
+        },
+        {
+            "name": "Debug: nucleo-vcp",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/nucleo-vcp/zephyr/zephyr.elf",
+            "configFiles": [
+                "/opt/zephyrproject/zephyr/boards/st/nucleo_g0b1re/support/openocd.cfg"
+            ],
+            "device": "STM32G0B1RE",
+            "runToEntryPoint": "main",
+            "preLaunchTask": "Build: nucleo-vcp"
+        },
+        {
+            "name": "Debug: custom-debug",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/custom-debug/zephyr/zephyr.elf",
+            "configFiles": [
+                "${workspaceFolder}/boards/custom/crsf_fsdb01/support/openocd.cfg"
+            ],
+            "device": "STM32G0B1CE",
+            "runToEntryPoint": "main",
+            "preLaunchTask": "Build: custom-debug"
+        },
+        {
+            "name": "Attach: custom-debug",
+            "type": "cortex-debug",
+            "request": "attach",
+            "servertype": "openocd",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/custom-debug/zephyr/zephyr.elf",
+            "configFiles": [
+                "${workspaceFolder}/boards/custom/crsf_fsdb01/support/openocd.cfg"
+            ],
+            "device": "STM32G0B1CE"
+        }
+    ]
 }

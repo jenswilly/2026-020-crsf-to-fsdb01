@@ -1,84 +1,127 @@
 {
-  "version": 6,
-  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
-  "configurePresets": [
-    {
-      "name": "base",
-      "hidden": true,
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build_${presetName}",
-      "cacheVariables": {
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-      }
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 25,
+        "patch": 0
     },
-    {
-      "name": "release",
-      "hidden": true,
-      "description": "Adds release.conf",
-      "cacheVariables": { "APP_BUILD_MODE": "release" }
-    },
-    {
-      "name": "debug",
-      "hidden": true,
-      "description": "Adds debug.conf",
-      "cacheVariables": { "APP_BUILD_MODE": "debug" }
-    },
-    {
-      "name": "nucleo-board",
-      "hidden": true,
-      "inherits": "base",
-      "cacheVariables": {
-        "BOARD": "nucleo_g0b1re/stm32g0b1xx",
-        "BOARD_FLASH_RUNNER": "openocd"
-      }
-    },
-    {
-      "name": "custom-board",
-      "hidden": true,
-      "inherits": "base",
-      "cacheVariables": {
-        "BOARD": "crsf_fsdb01/stm32g0b1xx"
-      }
-    },
-    {
-      "name": "nucleo",
-      "inherits": ["release", "nucleo-board"],
-      "displayName": "NUCLEO-G0B1RE (release)",
-      "description": "Development board, STM32G0B1RET6"
-    },
-    {
-      "name": "nucleo-debug",
-      "inherits": ["debug", "nucleo-board"],
-      "displayName": "NUCLEO-G0B1RE (debug)",
-      "description": "Development board, STM32G0B1RET6"
-    },
-    {
-      "name": "nucleo-vcp",
-      "inherits": ["debug", "nucleo-board"],
-      "displayName": "NUCLEO-G0B1RE (debug, console on ST-LINK VCP)",
-      "description": "Development board with console/shell on USART2 (ST-LINK virtual COM port) instead of USB CDC ACM",
-      "cacheVariables": {
-        "EXTRA_DTC_OVERLAY_FILE": "${sourceDir}/boards/nucleo_vcp_console.overlay"
-      }
-    },
-    {
-      "name": "custom",
-      "inherits": ["release", "custom-board"],
-      "displayName": "Custom board (crsf_fsdb01, release)",
-      "description": "Production board, STM32G0B1CET6"
-    },
-    {
-      "name": "custom-debug",
-      "inherits": ["debug", "custom-board"],
-      "displayName": "Custom board (crsf_fsdb01, debug)",
-      "description": "Production board, STM32G0B1CET6"
-    }
-  ],
-  "buildPresets": [
-    { "name": "nucleo", "configurePreset": "nucleo", "displayName": "NUCLEO-G0B1RE (release)" },
-    { "name": "nucleo-debug", "configurePreset": "nucleo-debug", "displayName": "NUCLEO-G0B1RE (debug)" },
-    { "name": "nucleo-vcp", "configurePreset": "nucleo-vcp", "displayName": "NUCLEO-G0B1RE (debug, VCP console)" },
-    { "name": "custom", "configurePreset": "custom", "displayName": "Custom board (release)" },
-    { "name": "custom-debug", "configurePreset": "custom-debug", "displayName": "Custom board (debug)" }
-  ]
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "release",
+            "hidden": true,
+            "description": "Adds release.conf",
+            "cacheVariables": {
+                "APP_BUILD_MODE": "release"
+            }
+        },
+        {
+            "name": "debug",
+            "hidden": true,
+            "description": "Adds debug.conf",
+            "cacheVariables": {
+                "APP_BUILD_MODE": "debug"
+            }
+        },
+        {
+            "name": "nucleo-board",
+            "hidden": true,
+            "inherits": "base",
+            "cacheVariables": {
+                "BOARD": "nucleo_g0b1re/stm32g0b1xx",
+                "BOARD_FLASH_RUNNER": "openocd"
+            }
+        },
+        {
+            "name": "custom-board",
+            "hidden": true,
+            "inherits": "base",
+            "cacheVariables": {
+                "BOARD": "crsf_fsdb01/stm32g0b1xx"
+            }
+        },
+        {
+            "name": "nucleo",
+            "inherits": [
+                "release",
+                "nucleo-board"
+            ],
+            "displayName": "NUCLEO-G0B1RE (release)",
+            "description": "Development board, STM32G0B1RET6"
+        },
+        {
+            "name": "nucleo-debug",
+            "inherits": [
+                "debug",
+                "nucleo-board"
+            ],
+            "displayName": "NUCLEO-G0B1RE (debug)",
+            "description": "Development board, STM32G0B1RET6"
+        },
+        {
+            "name": "nucleo-vcp",
+            "inherits": [
+                "debug",
+                "nucleo-board"
+            ],
+            "displayName": "NUCLEO-G0B1RE (debug, console on ST-LINK VCP)",
+            "description": "Development board with console/shell on USART2 (ST-LINK virtual COM port) instead of USB CDC ACM",
+            "cacheVariables": {
+                "EXTRA_DTC_OVERLAY_FILE": "${sourceDir}/boards/nucleo_vcp_console.overlay"
+            }
+        },
+        {
+            "name": "custom",
+            "inherits": [
+                "release",
+                "custom-board"
+            ],
+            "displayName": "Custom board (crsf_fsdb01, release)",
+            "description": "Production board, STM32G0B1CET6"
+        },
+        {
+            "name": "custom-debug",
+            "inherits": [
+                "debug",
+                "custom-board"
+            ],
+            "displayName": "Custom board (crsf_fsdb01, debug)",
+            "description": "Production board, STM32G0B1CET6"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "nucleo",
+            "configurePreset": "nucleo",
+            "displayName": "NUCLEO-G0B1RE (release)"
+        },
+        {
+            "name": "nucleo-debug",
+            "configurePreset": "nucleo-debug",
+            "displayName": "NUCLEO-G0B1RE (debug)"
+        },
+        {
+            "name": "nucleo-vcp",
+            "configurePreset": "nucleo-vcp",
+            "displayName": "NUCLEO-G0B1RE (debug, VCP console)"
+        },
+        {
+            "name": "custom",
+            "configurePreset": "custom",
+            "displayName": "Custom board (release)"
+        },
+        {
+            "name": "custom-debug",
+            "configurePreset": "custom-debug",
+            "displayName": "Custom board (debug)"
+        }
+    ]
 }

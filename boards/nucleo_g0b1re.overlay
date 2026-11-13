@@ -4,7 +4,7 @@
  * Console/shell on USB CDC ACM via an external USB connector wired to
  * PA12 = D+ (CN10-12), PA11 = D- (CN10-14) and GND.
  * CRSF link on USART1: PC4 = TX (Arduino D1), PC5 = RX (Arduino D0).
- * FS-DB01 signal out: PA10 (Arduino D2), placeholder.
+ * FS-DB01 signal out: PA10 (Arduino D2, TIM1_CH3), placeholder.
  * Voltage sense inputs: PA0 (Arduino A0) and PA1 (Arduino A1) on ADC1.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -18,7 +18,10 @@
 	/* TODO: placeholder pin, FS-DB01 output not assigned yet */
 	fsdb01: fsdb01 {
 		compatible = "flysky,fsdb01";
-		out-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+		timer = <&timers1>;
+		channel = <3>;
+		pinctrl-0 = <&tim1_ch3_pa10>;
+		pinctrl-names = "default";
 	};
 
 	/* Input voltage dividers: 100k over 33k, ratio 33/133 = 0.248 */
@@ -48,6 +51,11 @@
 	current-speed = <420000>;
 	/* RX FIFO: without it, ISR latency over ~24 us (one byte) overruns */
 	fifo-enable;
+};
+
+/* Used directly by the FS-DB01 driver; its pwm and counter children stay disabled */
+&timers1 {
+	status = "okay";
 };
 
 /* PA0/PA1 pinctrl, clock and status come from the stock board */

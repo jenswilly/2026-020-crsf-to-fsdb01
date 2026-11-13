@@ -17,20 +17,23 @@
 
 namespace mapping {
 
+constexpr uint16_t kMaxValue = 2012;
+constexpr uint16_t kMinValue = 988;
+
 struct Rule {
-    /* CRSF channel, 1-16 as numbered on the radio */
+    // CRSF channel, 1-16 as numbered on the radio
     uint8_t channel;
-    /* Inclusive interval in us (see crsf::channel_to_us()) */
+    // Inclusive interval in us (see crsf::channel_to_us())
     uint16_t min_us;
     uint16_t max_us;
-    /* FS-DB01 frame bits to turn on (FSDB01_* flags) */
+    // FS-DB01 frame bits to turn on (FSDB01_* flags)
     uint16_t output;
 };
 
-/* The rules used until they're configurable */
+// The rules used until they're configurable
 std::span<const Rule> default_rules();
 
-/* FS-DB01 frame for the given channels; rules with an invalid channel never match */
+// FS-DB01 frame for the given channels; rules with an invalid channel never match
 uint16_t map_channels(const crsf::Channels& channels, std::span<const Rule> rules);
 
 }  // namespace mapping

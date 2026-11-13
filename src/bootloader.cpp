@@ -22,12 +22,12 @@
 
 namespace {
 
-/* System memory (built-in bootloader) of the STM32G0B1, see RM0444 and AN2606 */
+// System memory (built-in bootloader) of the STM32G0B1, see RM0444 and AN2606
 constexpr uintptr_t system_memory_base = 0x1FFF0000;
 
 constexpr uint32_t bootloader_magic = 0xB007'1DF0;
 
-/* Not cleared at startup, so the value survives the reboot */
+// Not cleared at startup, so the value survives the reboot
 __noinit uint32_t boot_request;
 
 [[noreturn]] void jump_to_system_bootloader() {
@@ -44,7 +44,7 @@ __noinit uint32_t boot_request;
     __DSB();
     __ISB();
 
-    /* Map system memory at address 0 and point the vector table at it */
+    // Map system memory at address 0 and point the vector table at it
     LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
     LL_SYSCFG_SetRemapMemory(LL_SYSCFG_REMAP_SYSTEMFLASH);
     SCB->VTOR = system_memory_base;
@@ -63,7 +63,7 @@ __noinit uint32_t boot_request;
     __builtin_unreachable();
 }
 
-/* Runs before the clock driver (PRE_KERNEL_1, priority 1) reconfigures the clocks */
+// Runs before the clock driver (PRE_KERNEL_1, priority 1) reconfigures the clocks
 int check_boot_request() {
     if (boot_request == bootloader_magic) {
         boot_request = 0;

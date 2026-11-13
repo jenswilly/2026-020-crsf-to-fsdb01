@@ -36,7 +36,7 @@ constexpr std::array<LedName, 7> led_names{{
     {"nosig_slow", 7},
 }};
 
-/* Bits that can be addressed from the shell; bit 8 must always be 0 */
+// Bits that can be addressed from the shell; bit 8 must always be 0
 constexpr unsigned int user_bits = 8;
 constexpr uint16_t all_mask = BIT_MASK(user_bits);
 
@@ -53,7 +53,7 @@ bool check_ready(const shell* sh) {
     return true;
 }
 
-/* Parse <led|all|0-7> into a frame bit mask */
+// Parse <led|all|0-7> into a frame bit mask
 std::optional<uint16_t> parse_leds(const shell* sh, std::string_view arg) {
     if (arg == "all") {
         return all_mask;
@@ -75,7 +75,7 @@ std::optional<uint16_t> parse_leds(const shell* sh, std::string_view arg) {
     return std::nullopt;
 }
 
-/* Apply op(frame, mask) to the current frame; switches to manual mode */
+// Apply op(frame, mask) to the current frame; switches to manual mode
 template <typename Op>
 int modify_frame(const shell* sh, char** argv, Op op) {
     if (!check_ready(sh)) {
@@ -158,7 +158,7 @@ int cmd_disable(const shell* sh, size_t, char**) {
     return ret;
 }
 
-/* Tab completion for the LED argument: the names, then "all" */
+// Tab completion for the LED argument: the names, then "all"
 void led_name_get(size_t idx, shell_static_entry* entry) {
     if (idx < led_names.size()) {
         entry->syntax = led_names[idx].name;
@@ -174,7 +174,7 @@ void led_name_get(size_t idx, shell_static_entry* entry) {
 
 }  // namespace
 
-/* Shell macros expand to `cond ? arg : NULL`, so pass NULL rather than nullptr */
+// Shell macros expand to `cond ? arg : NULL`, so pass NULL rather than nullptr
 SHELL_DYNAMIC_CMD_CREATE(dsub_led_names, led_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(

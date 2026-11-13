@@ -41,7 +41,7 @@ bool decode_channels(std::span<const uint8_t> payload, Channels& channels) {
         return false;
     }
 
-    /* 16 x 11 bits = 22 bytes exactly, channel 0 in the lowest bits */
+    // 16 x 11 bits = 22 bytes exactly, channel 0 in the lowest bits
     uint32_t acc = 0;
     unsigned int bits = 0;
     auto in = payload.begin();
@@ -78,7 +78,7 @@ bool decode_link_statistics(std::span<const uint8_t> payload, LinkStatistics& st
 }
 
 int channel_to_us(uint16_t value) {
-    /* Linear through (172, 988) and (1811, 2012), rounded to nearest */
+    // Linear through (172, 988) and (1811, 2012), rounded to nearest
     constexpr int span_value = channel_max - channel_min;
     constexpr int span_us = 2012 - 988;
     int n = (value - channel_min) * span_us;
@@ -108,7 +108,7 @@ std::optional<Frame> Parser::feed(uint8_t byte, uint32_t now) {
         return std::nullopt;
     }
 
-    /* Complete: [sync] [len] [type] [payload ...] [crc]; the CRC covers type + payload */
+    // Complete: [sync] [len] [type] [payload ...] [crc]; the CRC covers type + payload
     pos_ = 0;
     const size_t length = buf_[1];
     const auto checked = std::span<const uint8_t>(buf_).subspan(2, length - 1);

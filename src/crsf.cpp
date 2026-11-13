@@ -29,11 +29,11 @@ namespace {
  */
 constexpr uint32_t frame_timeout_cycles = k_us_to_cyc_ceil32(1750);
 
-/* Only touched from the UART ISR */
+// Only touched from the UART ISR
 Parser parser{frame_timeout_cycles};
 
 k_spinlock lock;
-/* Protected by lock */
+// Protected by lock
 Status status;
 
 void handle_frame(const Frame& frame) {
@@ -68,7 +68,7 @@ void uart_isr(const device* dev, void*) {
     }
 
     K_SPINLOCK(&lock) {
-        /* Check before reading: reading the data clears the overrun flag */
+        // Check before reading: reading the data clears the overrun flag
         if (uart_err_check(dev) > 0) {
             status.counters.uart_errors++;
         }

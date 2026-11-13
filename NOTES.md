@@ -2,13 +2,13 @@
 
 Working notes for picking up development, on any machine or in a new Claude Code session. `README.md` covers the hardware, pins, protocol and build; this file covers where things stand and why. Update it when an item is settled.
 
-Last updated: 2026-11-08.
+Last updated: 2026-11-13.
 
 ## Status
 
 - **Builds:** all five presets (`nucleo`, `nucleo-debug`, `nucleo-vcp`, `custom`, `custom-debug`) build with zero warnings. Release builds use ~90 KB flash, debug builds ~275 KB flash and ~32 KB RAM.
 - **Debugging works on the Nucleo** (`Debug: nucleo-debug` in VS Code): the debug build reaches `main()`, stops at breakpoints and runs without faults, and USB enumerates.
-- **FS-DB01 driver** (`drivers/fsdb01/`) is functional but **its output is not yet verified on hardware**. Check with a logic analyser on the Nucleo's PA10 (Arduino D2). With the no-signal frame (bits 6 and 7), each 30 ms frame should be six short pulses (1 ms high / 2 ms low), two long ones (2 ms / 1 ms), one short, then 3 ms low.
+- **FS-DB01 driver** (`drivers/fsdb01/`) generates the signal with TIM1 PWM (rewritten 2026-11-13) and is **verified on the scope** on the Nucleo's PA10 (`nucleo-debug`, 2026-11-13): clean, stable pulses. The old `k_timer`/GPIO version's pulse widths varied by ±0.3 ms (see Decisions). **Works with a real FS-DB01 module** (2026-11-13). The jittery GPIO version also made the module react noticeably late to RC changes; with clean timing that delay is gone, so the module probably discards frames with out-of-tolerance pulses.
 - **`main()`** checks devices, starts the CRSF receiver and the control thread, and blinks `led0`. **FS-DB01 output is enabled at boot** with the failsafe frame.
 - **Mapping and control thread** (`src/mapping.cpp`, `src/control.cpp`) are done, with hardcoded rules. **Not tested with a receiver yet.** `map_channels()` passed a host-side test of every rule in the table, and of rules with an invalid channel; that test isn't in the repo either.
 - **Shell** (`src/shell_*.cpp`): `leds` drives the driver by hand, `voltage` reads the two voltage sense inputs, `dfu` reboots into the USB DFU bootloader; see README.
@@ -26,9 +26,12 @@ Last updated: 2026-11-08.
   - Sources are added with `target_sources(app …)`. `zephyr_library()` does **not** work from an app: Zephyr warns and leaves the library out of the link, which shows up as `undefined reference to __device_dts_ord_N`.
 - **API:** `fsdb01_set_frame()` (atomic, callable from anywhere, latched at the next frame start), `fsdb01_get_frame()`, `fsdb01_enable()`/`fsdb01_disable()` (mutex, not ISR-safe), `fsdb01_is_enabled()`.
   - No queue or dedicated thread for the driver: only the latest frame matters, so an atomic value is enough.
-- **Bit timing:** one-shot `k_timer` re-armed at each edge (ISR context), scheduled with **absolute** deadlines (`K_TIMEOUT_ABS_TICKS`). Relative re-arms add 1 tick per edge in Zephyr 4.4 (`kernel/timeout.c`, `timeout.ticks + 1`), which would stretch bits to ~3.2 ms. The Kconfig selects `TIMEOUT_64BIT` for this. Tick rate is 10 kHz.
-  - Fallback if timing proves too loose: a hardware timer in PWM mode (3 ms period, 1 or 2 ms pulse).
-- **`invert` DT property** inverts every level (frames, gap, disabled state, level at boot) for an inverting level shifter. Don't combine it with `GPIO_ACTIVE_LOW` in `out-gpios`; the two cancel out.
+- **Bit timing: TIM1 in PWM mode** (decided 2026-11-13). Counts in µs, period 3 ms = one bit cell, compare value 1000/2000 µs for a 0/1 and 0 for the gap cell. Compare preload is on, so each value takes effect exactly at the next update event; the update ISR loads the value for the *following* cell and has a full 3 ms of slack. The frame is latched when bit 0 is loaded (at the start of the gap).
+  - Both output pins are TIM1 channels (AF2): PA8 = CH1 on the custom board, PA10 = CH3 on the Nucleo. The binding takes `timer`, `channel` and `pinctrl-0`; `timers1` is `okay` but its `pwm`/`counter` children stay disabled, as the driver programs TIM1 directly with the LL API (Zephyr's PWM API has no per-period callback).
+  - **Why not software timing:** the first version toggled a GPIO from a `k_timer` with absolute deadlines. The deadlines were correct, but on a `nucleo-debug` build with no USB attached the pulse widths still varied between 0.7 and 1.1 ms. On the Cortex-M0+ SysTick has the same priority as device IRQs (only 4 levels) and `irq_lock`/spinlocks mask everything (no BASEPRI), so any ISR or locked section delays an edge.
+  - Disabled = output forced inactive (`OCxM` forced inactive), counter stopped.
+  - TIM1 keeps running when the core is halted in the debugger, repeating the last preloaded cell.
+- **`invert` DT property** inverts every level (frames, gap, disabled state, level at boot) for an inverting level shifter, via the channel's output polarity (`CCxP`).
 
 ### Custom board vs. schematic
 
@@ -82,11 +85,11 @@ Last updated: 2026-11-08.
 
 ## Open items
 
-- **FS-DB01 output pin on the Nucleo:** PA10 is still a placeholder. The custom board uses PA8 (final, per the schematic).
+- **FS-DB01 output pin on the Nucleo:** PA10 is still a placeholder. The custom board uses PA8 (final, per the schematic). A replacement must also be a TIM1 channel (or change `timer`).
 - **Configurable mapping:** rules are hardcoded in `src/mapping.cpp`. Next: edit them from the shell and store them in flash (e.g. Zephyr settings on NVS/ZMS, which needs a storage partition in both boards' DTS).
 - **Control thread stack:** 1024 bytes, not measured yet. Check it with `kernel thread stacks` in a debug build with a receiver connected.
 - **CRSF on hardware:** test with a real ELRS receiver: frames arrive, no CRC or UART errors, and channel values match the radio.
-- **Hardware verification:** CRSF input (above), FS-DB01 output timing (see Status), and the full `dfu` → `dfu-util` flow with the MPU fix.
+- **Hardware verification:** CRSF input (above) and the full `dfu` → `dfu-util` flow with the MPU fix.
 - **`release.conf`** is empty. Release-only Kconfig currently lives in `prj.conf` and is undone in `debug.conf`.
 - **USB VID/PID** is still Zephyr's test ID.
 - **PCB:** schematic rev. 1 is done (`pcb/2026-020-crft-to-fsdb01/`, built from `pcb/INSTRUCTIONS.md`, see `pcb/PLAN.md`). Layout is next.

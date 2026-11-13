@@ -4,21 +4,45 @@ description: |
   FlySky FS-DB01 LED control module, driven over its proprietary
   single-wire, pulse-width-coded protocol (9-bit frames, 3 ms bit cells).
 
+  The waveform is generated in hardware by an STM32 timer channel in PWM
+  mode, so the edges don't depend on interrupt latency. The timer must not
+  be used by anything else (keep its pwm and counter child nodes disabled).
+
   Example:
 
     fsdb01: fsdb01 {
         compatible = "flysky,fsdb01";
-        out-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+        timer = <&timers1>;
+        channel = <3>;
+        pinctrl-0 = <&tim1_ch3_pa10>;
+        pinctrl-names = "default";
     };
 
 compatible: "flysky,fsdb01"
 
+include: pinctrl-device.yaml
+
 properties:
-  out-gpios:
-    type: phandle-array
+  timer:
+    type: phandle
     required: true
     description: |
-      Signal line to the module. Idle (inactive) is low.
+      STM32 timer (st,stm32-timers node) that generates the signal. Its
+      update interrupt must be named "brk_up_trg_com" (TIM1 on STM32G0).
+
+  channel:
+    type: int
+    required: true
+    enum: [1, 2, 3, 4]
+    description: |
+      Timer output channel connected to the signal line. pinctrl-0 must
+      route this channel to the pin.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
 
   invert:
     type: boolean

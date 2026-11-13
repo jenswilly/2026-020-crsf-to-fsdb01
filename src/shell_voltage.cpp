@@ -17,7 +17,7 @@ namespace {
 struct VoltageInput {
     const char* name;
     const device* dev;
-    /* Divider ratio as output/full ohms, to show the voltage at the pin */
+    // Divider ratio as output/full ohms, to show the voltage at the pin
     uint32_t output_ohms;
     uint32_t full_ohms;
 };
@@ -54,7 +54,7 @@ int cmd_voltage(const shell* sh, size_t, char**) {
             continue;
         }
 
-        /* Single-ended readings, so never negative; printf has no float support */
+        // Single-ended readings, so never negative; printf has no float support
         auto input_mv = static_cast<uint32_t>(sensor_value_to_milli(&val));
         auto pin_mv = static_cast<uint32_t>(uint64_t{input_mv} * in.output_ohms / in.full_ohms);
         shell_print(sh, "%-8s %2u.%03u V   (pin %u.%03u V)", in.name, input_mv / 1000,
@@ -65,6 +65,6 @@ int cmd_voltage(const shell* sh, size_t, char**) {
 
 }  // namespace
 
-/* Shell macros expand to `cond ? arg : NULL`, so pass NULL rather than nullptr */
+// Shell macros expand to `cond ? arg : NULL`, so pass NULL rather than nullptr
 SHELL_CMD_REGISTER(voltage, NULL, "Show the voltage sense inputs (before the dividers)",
                    cmd_voltage);

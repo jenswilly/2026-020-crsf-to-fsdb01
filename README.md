@@ -25,7 +25,7 @@ Custom board pins match the schematic, rev. 1 (`pcb/2026-020-crft-to-fsdb01/`).
 | USB D−/D+           | PA11/PA12            | PA11 (CN10-14)/PA12 (CN10-12)      |
 | `led0`              | PB0 (blue, active low) | PA5 (LD4, green)                     |
 | `led1`              | PB1 (red-orange, active low) | –                                    |
-| `fsdb01` signal out | PA8                  | PA10 (Arduino D2, placeholder)       |
+| `fsdb01` signal out | PA8 (TIM1_CH1)       | PA10 (Arduino D2, TIM1_CH3, placeholder) |
 | `vsense0` (ADC1 IN0)| PA0 (Vin)            | PA0 (Arduino A0)                     |
 | `vsense1` (ADC1 IN1)| PA1 (VBUS)           | PA1 (Arduino A1)                     |
 | SWD                 | PA13 SWDIO, PA14 SWCLK | on-board ST-LINK                   |
@@ -122,7 +122,7 @@ The host needs permission to open `0483:df11`, e.g. a udev rule like the one for
 
 All of the following comes from the reverse-engineered reference implementation; it isn't an official specification.
 
-- A single GPIO line, idle **low**, driven from a 1 ms time base.
+- A single line, idle **low**. The reference drives it from a 1 ms time base; this firmware generates it with TIM1 in PWM mode (one 3 ms timer period per bit, compare value = high time), so the edges don't depend on interrupt latency. TIM1 is reserved for the driver on both boards.
   If the signal goes through an inverting level shifter, add the `invert` property to the `fsdb01` devicetree node. The driver then inverts every level it drives, including the disabled state.
 - A frame is **9 bits**, sent bit 0 first, followed by **3 ms low**. Each bit takes 3 ms, so a frame takes 30 ms and repeats continuously.
   - `1` = 2 ms high, then 1 ms low

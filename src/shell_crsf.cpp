@@ -13,7 +13,7 @@
 
 namespace {
 
-/* Prints the age of a timestamp from crsf::Status, or "never" */
+// Prints the age of a timestamp from crsf::Status, or "never"
 void print_age(const shell* sh, const char* what, int64_t ticks) {
     if (ticks == 0) {
         shell_print(sh, "%-17s never", what);
@@ -62,7 +62,7 @@ int cmd_channels(const shell* sh, size_t, char**) {
 
 }  // namespace
 
-/* Shell macros expand to `cond ? arg : NULL`, so pass NULL rather than nullptr */
+// Shell macros expand to `cond ? arg : NULL`, so pass NULL rather than nullptr
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_crsf,
     SHELL_CMD(status, NULL, "Show frame counters, errors and link statistics", cmd_status),

@@ -144,15 +144,7 @@ The reference firmware's power-on state is bits 6 and 7 set: the no-signal indic
 
 ### Mapping and failsafe
 
-A control thread (`src/control.cpp`) checks the latest CRSF channels every 10 ms and sets the FS-DB01 frame. Each rule (`src/mapping.cpp`) turns an output on while one channel is inside an inclusive interval in µs. An output is on if any of its rules match. For now the rules are hardcoded. Later they'll be configurable from the shell and stored in flash.
-
-| Output         | Channel | Interval (µs) | Meaning               |
-|----------------|---------|---------------|-----------------------|
-| Right (bit 0)  | 5       | 1700–2100     | ch5 high              |
-| Left (bit 1)   | 5       | 900–1300      | ch5 low               |
-| Ill. 1 (bit 2) | 6       | 1300–2100     | ch6 mid or high       |
-| Ill. 2 (bit 3) | 6       | 1700–2100     | ch6 high              |
-| Brake (bit 5)  | 2       | 900–1450      | throttle below center |
+A control thread (`src/control.cpp`) checks the latest CRSF channels every 10 ms and sets the FS-DB01 frame. Each rule (`src/mapping.cpp`) ties an inclusive channel interval in µs to an output, with one of two behaviours. A **temporary** rule turns the output on while the channel is inside the interval. A **toggle** rule toggles the output each time the channel enters the interval; the channel must leave the interval before the rule can toggle again. An output is on if a temporary rule matches or it's toggled on. Toggled outputs are remembered across link loss, and toggle rules keep following the radio in manual mode. All rules in the table below are temporary. For now the rules are hardcoded. Later they'll be configurable from the shell and stored in flash.
 
 **Failsafe:** the output is enabled at boot with the failsafe frame, bit 6 only (no-signal, fast blink). It switches to the mapped frame once RC channel frames arrive, and back to the failsafe frame if none arrive for 500 ms. ELRS receivers stop sending RC frames when the link is lost.
 

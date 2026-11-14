@@ -51,7 +51,7 @@ Last updated: 2026-11-13.
 
 ### Mapping and failsafe (decided 2026-11-07)
 
-- **Rules:** CRSF channel (1–16), inclusive min/max in **µs** (converted with `crsf::channel_to_us()`), and the FS-DB01 bits to turn on. An output is on if any of its rules match. The first table is in README; it's hardcoded until the rules are configurable from the CLI and stored in flash.
+- **Rules:** CRSF channel (1–16), inclusive min/max in **µs** (converted with `crsf::channel_to_us()`), the FS-DB01 bits, and a behaviour (added 2026-11-14): **temporary** (bits on while the channel is in the interval) or **toggle** (bits toggle when the channel enters the interval; it must leave to re-arm). An output is on if a temporary rule matches or it's toggled on. The toggled state is per output, not per rule, so two rules can toggle the same output. It survives link loss, is evaluated in manual mode too, and starts armed: a channel already inside a toggle interval on the first RC frame toggles the output on. No default rule uses toggle yet, and it's untested on hardware. The first table is in README; it's hardcoded until the rules are configurable from the CLI and stored in flash.
 - **Failsafe:** send `FSDB01_NO_SIGNAL_FAST` (bit 6 only, not 6+7) from boot until RC frames arrive, and again when none have arrived for 500 ms. The output is enabled at boot, unlike before.
   - Link loss is detected only from the RC frame timeout. Link statistics (e.g. LQ 0) aren't used.
 - **Control thread** (`control`, priority 5) polls `crsf::get_status()` every 10 ms instead of being woken per frame. The FS-DB01 latches a new frame only every 30 ms, so that's enough.

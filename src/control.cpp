@@ -41,6 +41,8 @@ bool channels_fresh(const crsf::Status& status) {
 
 void run(void*, void*, void*) {
     bool was_up = false;
+    // Kept across link loss: toggled outputs come back as they were when the link returns
+    mapping::State mapping_state;
 
     while (true) {
         const crsf::Status status = crsf::get_status();
@@ -56,9 +58,13 @@ void run(void*, void*, void*) {
             was_up = up;
         }
 
+        // Mapped in manual mode too, so toggle rules keep following the radio
+        uint16_t frame = failsafe_frame;
+        if (up) {
+            frame = mapping::map_channels(status.channels, mapping::default_rules(), mapping_state);
+        }
+
         if (!atomic_get(&manual_mode)) {
-            uint16_t frame = up ? mapping::map_channels(status.channels, mapping::default_rules())
-                                : failsafe_frame;
             fsdb01_set_frame(output, frame);
         }
 
